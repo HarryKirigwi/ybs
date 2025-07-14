@@ -298,103 +298,138 @@ export default function ProfilePage() {
 
       {/* Edit Profile Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Edit Profile</h2>
-              <button 
-                onClick={handleCloseModal}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-600" />
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden transform transition-all duration-300 ease-out scale-100">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 p-6 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Edit2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Edit Profile</h2>
+                    <p className="text-blue-100 text-sm">Update your personal information</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleCloseModal}
+                  className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 hover:scale-110"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+              <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-purple-400/20 rounded-full blur-lg"></div>
             </div>
 
-            {/* Profile Picture Section */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mb-3">
-                <User className="w-10 h-10 text-slate-500" />
-              </div>
-              <button className="flex items-center space-x-2 text-blue-600 text-sm font-medium hover:underline">
-                <Camera className="w-4 h-4" />
-                <span>Change Photo</span>
-              </button>
-            </div>
-
-            {/* Edit Form */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+            <div className="p-6 bg-gradient-to-b from-slate-50 to-white">
+              {/* Profile Picture Section */}
+              <div className="flex flex-col items-center mb-8">
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={editFormData.name}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your full name"
-                  />
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
+                    <User className="w-12 h-12 text-blue-600" />
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-blue-700 transition-colors">
+                    <Camera className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+                <button className="mt-3 text-blue-600 text-sm font-medium hover:text-blue-700 transition-colors flex items-center space-x-1 group">
+                  <span>Change Profile Photo</span>
+                  <Edit2 className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
+
+              {/* Edit Form */}
+              <div className="space-y-6">
+                <div className="group">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <span>Full Name</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 text-slate-800 placeholder-slate-400 group-hover:border-slate-300"
+                      placeholder="Enter your full name"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                    <span>Email Address</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 text-slate-800 placeholder-slate-400 group-hover:border-slate-300"
+                      placeholder="Enter your email address"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-blue-600" />
+                    <span>Phone Number</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 text-slate-800 placeholder-slate-400 group-hover:border-slate-300"
+                      placeholder="Enter your phone number"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <span>Location</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={editFormData.location}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 text-slate-800 placeholder-slate-400 group-hover:border-slate-300"
+                      placeholder="Enter your location"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your email"
-                  />
-                </div>
+              {/* Modal Actions */}
+              <div className="flex space-x-4 mt-8 pt-6 border-t border-slate-200">
+                <button
+                  onClick={handleCloseModal}
+                  className="flex-1 px-6 py-4 border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 font-semibold group"
+                >
+                  <span className="group-hover:scale-105 transition-transform inline-block">Cancel</span>
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
+                >
+                  <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span>Save Changes</span>
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="tel"
-                    value={editFormData.phone}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={editFormData.location}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your location"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={handleCloseModal}
-                className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveProfile}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Changes</span>
-              </button>
             </div>
           </div>
         </div>

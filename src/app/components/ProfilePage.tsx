@@ -31,7 +31,8 @@ import {
   CreditCard,
   MessageSquare,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Camera
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -40,6 +41,13 @@ export default function ProfilePage() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempUserData, setTempUserData] = useState({})
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    location: ''
+  })
   
   // Settings states
   const [notifications, setNotifications] = useState({
@@ -65,7 +73,7 @@ export default function ProfilePage() {
     sound: true
   })
   
-  const userData = {
+  const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
     phone: '+254 700 123 456',
@@ -75,7 +83,7 @@ export default function ProfilePage() {
     totalReferrals: 35,
     totalEarnings: 28900,
     profilePicture: null
-  }
+  })
 
   const achievements = [
     { id: 1, title: 'First Referral', description: 'Made your first referral', icon: Users, earned: true },
@@ -83,6 +91,47 @@ export default function ProfilePage() {
     { id: 3, title: 'Consistent Earner', description: 'Earned for 7 consecutive days', icon: TrendingUp, earned: true },
     { id: 4, title: 'Super Referrer', description: 'Reach 50 referrals', icon: Users, earned: false },
   ]
+
+  const handleEditProfile = () => {
+    setEditFormData({
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      location: userData.location
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSaveProfile = () => {
+    // Update the userData with the form data
+    setUserData(prev => ({
+      ...prev,
+      name: editFormData.name,
+      email: editFormData.email,
+      phone: editFormData.phone,
+      location: editFormData.location
+    }))
+    
+    // Here you would typically save to backend
+    console.log('Saving profile data:', editFormData)
+    
+    // Close the modal
+    setShowEditModal(false)
+    
+    // Show success message (you can implement this with a toast notification)
+    alert('Profile updated successfully!')
+  }
+
+  const handleCloseModal = () => {
+    setShowEditModal(false)
+    // Reset form data to original values
+    setEditFormData({
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      location: userData.location
+    })
+  }
 
   const handleEditField = (field: string) => {
     setEditingField(field)
@@ -239,13 +288,117 @@ export default function ProfilePage() {
             </div>
           </div>
           <button 
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={handleEditProfile}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
           >
             <Edit2 className="w-5 h-5" />
           </button>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-800">Edit Profile</h2>
+              <button 
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mb-3">
+                <User className="w-10 h-10 text-slate-500" />
+              </div>
+              <button className="flex items-center space-x-2 text-blue-600 text-sm font-medium hover:underline">
+                <Camera className="w-4 h-4" />
+                <span>Change Photo</span>
+              </button>
+            </div>
+
+            {/* Edit Form */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter your email"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="tel"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Location</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={editFormData.location}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter your location"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4">

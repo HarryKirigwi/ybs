@@ -10,59 +10,21 @@ import {
   ArrowDownLeft,
   Plus,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
-
-interface UserData {
-  activation_paid_at: string | null;
-  active_direct_referrals: number;
-  available_balance: number;
-  created_at: string;
-  full_name: string;
-  id: string;
-  is_active: boolean;
-  membership_level: string;
-  pending_balance: number;
-  phone_number: string;
-  phone_verified: boolean;
-  referral_code: string;
-  referred_by: string | null;
-  total_earnings: number;
-  updated_at: string;
-  username: string;
-}
+import { useState } from 'react'
+import { useUserData } from '../hooks/useUserData'
 
 export default function WalletPage() {
+  const { userData, computedData, loading, error, refreshUserData } = useUserData()
   const [showBalance, setShowBalance] = useState(true)
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true)
-  
-  useEffect(() => {
-    // Get user data from localStorage
-    const getUserData = () => {
-      try {
-        const storedUserData = localStorage.getItem('user_data') // Adjust key name as needed
-        if (storedUserData) {
-          const parsedData = JSON.parse(storedUserData)
-          setUserData(parsedData)
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-    getUserData()
-  }, [])
-
-  // Use real data from localStorage, with fallback values
-  const walletData = {
-    balance: userData?.available_balance || 0,
-    pendingEarnings: userData?.pending_balance || 0,
-    totalEarnings: userData?.total_earnings || 0,
-    minimumWithdraw: 1000 // This remains hardcoded for now
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refreshUserData()
+    setIsRefreshing(false)
   }
 
   // Mock transactions data - will be replaced with real API data later
@@ -90,6 +52,7 @@ export default function WalletPage() {
         <div className={`p-3 rounded-full ${
           color === 'text-green-600' ? 'bg-green-100' : 
           color === 'text-blue-600' ? 'bg-blue-100' : 
+          color === 'text-orange-600' ? 'bg-orange-100' :
           'bg-blue-100'
         }`}>
           <Icon className={`w-6 h-6 ${color}`} />
@@ -139,12 +102,13 @@ export default function WalletPage() {
               <Wallet className="w-6 h-6" />
               <div>
                 <h1 className="text-xl font-bold">My Wallet</h1>
-                <p className="text-blue-100 text-sm">Loading...</p>
+                <p className="text-blue-100 text-sm">Loading wallet data...</p>
               </div>
             </div>
             <button 
               onClick={() => setShowBalance(!showBalance)}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              disabled
             >
               {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -160,13 +124,29 @@ export default function WalletPage() {
               <div className="h-3 bg-slate-200 rounded w-1/4"></div>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl p-4 border border-slate-200">
+              <div className="animate-pulse">
+                <div className="h-4 bg-slate-200 rounded mb-2 w-1/2"></div>
+                <div className="h-8 bg-slate-200 rounded mb-2 w-3/4"></div>
+                <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-slate-200">
+              <div className="animate-pulse">
+                <div className="h-4 bg-slate-200 rounded mb-2 w-1/2"></div>
+                <div className="h-8 bg-slate-200 rounded mb-2 w-3/4"></div>
+                <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   // Error state
-  if (!userData) {
+  if (error || !userData || !computedData) {
     return (
       <div className="p-4 space-y-6">
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -174,27 +154,41 @@ export default function WalletPage() {
             <div className="p-2 bg-red-100 rounded-lg">
               <Wallet className="w-5 h-5 text-red-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="font-medium text-red-800">Unable to Load Wallet</p>
-              <p className="text-sm text-red-700">Please try logging in again</p>
+              <p className="text-sm text-red-700">
+                {error || 'Failed to load wallet data. Please try again.'}
+              </p>
             </div>
           </div>
           <button 
-            onClick={() => window.location.reload()}
-            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
           >
-            Retry
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Retrying...' : 'Retry'}</span>
           </button>
         </div>
       </div>
     )
   }
 
-  const canWithdraw = userData.is_active && walletData.balance >= walletData.minimumWithdraw
+  // Use real data from useUserData hook
+  const walletData = {
+    balance: computedData.financials.available,
+    pendingEarnings: computedData.financials.pending,
+    totalEarnings: computedData.financials.total,
+    totalValue: computedData.financials.totalValue,
+    canWithdraw: computedData.financials.canWithdraw,
+    minimumWithdraw: 1000 // This remains hardcoded for now
+  }
+
+  const canWithdraw = userData.is_active && computedData.financials.canWithdraw && walletData.balance >= walletData.minimumWithdraw
 
   return (
     <div className="p-4 space-y-6">
-      {/* Header */}
+      {/* Header with Refresh */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -202,21 +196,32 @@ export default function WalletPage() {
             <div>
               <h1 className="text-xl font-bold">My Wallet</h1>
               <p className="text-blue-100 text-sm">
-                {userData.is_active ? 'Manage your earnings' : 'Account activation required'}
+                {userData.is_active ? `Manage your earnings • ${computedData.membershipLevel.name}` : 'Account activation required'}
               </p>
             </div>
           </div>
-          <button 
-            onClick={() => setShowBalance(!showBalance)}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+              title="Refresh wallet data"
+            >
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button 
+              onClick={() => setShowBalance(!showBalance)}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title={showBalance ? 'Hide balance' : 'Show balance'}
+            >
+              {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Account Status Alert */}
-      {!userData.is_active && (
+      {computedData.status.needsActivation && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
           <div className="flex items-center space-x-3">
             <div className="bg-yellow-100 p-2 rounded-full">
@@ -224,7 +229,7 @@ export default function WalletPage() {
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-yellow-800">Account Not Activated</h4>
-              <p className="text-sm text-yellow-700">Activate your account to enable withdrawals and unlock all features.</p>
+              <p className="text-sm text-yellow-700">Activate your account to enable withdrawals and unlock all wallet features.</p>
             </div>
             <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
               Activate Now
@@ -233,7 +238,7 @@ export default function WalletPage() {
         </div>
       )}
 
-      {/* Balance Cards */}
+      {/* Balance Cards - Using Real Data */}
       <div className="grid grid-cols-1 gap-4">
         <StatCard 
           title="Available Balance"
@@ -274,7 +279,9 @@ export default function WalletPage() {
               ? 'Account activation required' 
               : walletData.balance < walletData.minimumWithdraw 
                 ? `Minimum withdrawal is KSH ${walletData.minimumWithdraw.toLocaleString()}`
-                : 'Withdraw funds'
+                : !computedData.financials.canWithdraw
+                  ? 'Insufficient balance for withdrawal'
+                  : 'Withdraw funds'
           }
         >
           <Download className="w-5 h-5" />
@@ -301,55 +308,82 @@ export default function WalletPage() {
             <CreditCard className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <p className="font-medium text-amber-800">Withdrawal Info</p>
-            <p className="text-sm text-amber-700">
-              Minimum withdrawal: KSH {walletData.minimumWithdraw.toLocaleString()}
-            </p>
-            <p className="text-sm text-amber-700">
-              Processing time: 1-3 business days
-            </p>
-            {!userData.is_active && (
-              <p className="text-sm text-amber-700 font-medium">
-                ⚠️ Account activation required for withdrawals
-              </p>
-            )}
+            <p className="font-medium text-amber-800">Withdrawal Information</p>
+            <div className="text-sm text-amber-700 space-y-1">
+              <p>• Minimum withdrawal: KSH {walletData.minimumWithdraw.toLocaleString()}</p>
+              <p>• Processing time: 1-3 business days</p>
+              <p>• Available for withdrawal: KSH {walletData.balance.toLocaleString()}</p>
+              {!userData.is_active && (
+                <p className="font-medium">⚠️ Account activation required for withdrawals</p>
+              )}
+              {userData.is_active && !computedData.financials.canWithdraw && (
+                <p className="font-medium">⚠️ Insufficient balance for withdrawal</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Balance Summary */}
-      {(walletData.balance > 0 || walletData.pendingEarnings > 0 || walletData.totalEarnings > 0) && (
-        <div className="bg-white rounded-xl p-4 border border-slate-200">
-          <h3 className="font-semibold text-slate-800 mb-3">Account Summary</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-600">Total Earnings:</span>
-              <span className="font-medium">KSH {walletData.totalEarnings.toLocaleString()}</span>
+      {/* Enhanced Balance Summary - Using Real Data */}
+      <div className="bg-white rounded-xl p-4 border border-slate-200">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-slate-800">Account Summary</h3>
+          <div className="flex items-center space-x-2">
+            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+              userData.is_active 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-orange-100 text-orange-800'
+            }`}>
+              {userData.is_active ? 'Active' : 'Inactive'}
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Available Balance:</span>
-              <span className="font-medium text-blue-600">KSH {walletData.balance.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Pending Balance:</span>
-              <span className="font-medium text-orange-600">KSH {walletData.pendingEarnings.toLocaleString()}</span>
-            </div>
-            <hr className="my-2" />
-            <div className="flex justify-between font-semibold">
-              <span className="text-slate-800">Total Value:</span>
-              <span className="text-green-600">
-                KSH {(walletData.balance + walletData.pendingEarnings).toLocaleString()}
-              </span>
+            <div className={`px-2 py-1 rounded-full text-xs font-medium ${computedData.membershipLevel.color.replace('text-', 'bg-').replace('-600', '-100')} ${computedData.membershipLevel.color}`}>
+              {computedData.membershipLevel.name}
             </div>
           </div>
         </div>
-      )}
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Total Earnings:</span>
+            <span className="font-medium">{showBalance ? `KSH ${walletData.totalEarnings.toLocaleString()}` : '****'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Available Balance:</span>
+            <span className="font-medium text-blue-600">{showBalance ? `KSH ${walletData.balance.toLocaleString()}` : '****'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Pending Balance:</span>
+            <span className="font-medium text-orange-600">{showBalance ? `KSH ${walletData.pendingEarnings.toLocaleString()}` : '****'}</span>
+          </div>
+          <hr className="my-2" />
+          <div className="flex justify-between font-semibold">
+            <span className="text-slate-800">Total Value:</span>
+            <span className="text-green-600">
+              {showBalance ? `KSH ${walletData.totalValue.toLocaleString()}` : '****'}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-slate-500">Active Referrals:</span>
+            <span className="text-slate-700">{computedData.referrals.active} members</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-slate-500">Member Since:</span>
+            <span className="text-slate-700">{new Date(userData.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
 
-      {/* Recent Transactions */}
+      {/* Recent Transactions - Using Mock Data (will be updated later) */}
       <div className="bg-white rounded-xl border border-slate-200">
         <div className="p-4 border-b border-slate-200">
-          <h3 className="font-semibold text-slate-800">Recent Transactions</h3>
-          <p className="text-sm text-slate-500">Mock data - will be replaced with real transactions</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-800">Recent Transactions</h3>
+              <p className="text-sm text-slate-500">Mock data - will be replaced with real transactions</p>
+            </div>
+            <div className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
+              Demo Data
+            </div>
+          </div>
         </div>
         <div className="divide-y divide-slate-100">
           {transactions.length > 0 ? (
@@ -365,8 +399,8 @@ export default function WalletPage() {
           )}
         </div>
         <div className="p-4 text-center">
-          <button className="text-blue-600 text-sm font-medium hover:underline">
-            View All Transactions
+          <button className="text-blue-600 text-sm font-medium hover:underline disabled:text-slate-400 disabled:no-underline" disabled>
+            View All Transactions (Coming Soon)
           </button>
         </div>
       </div>

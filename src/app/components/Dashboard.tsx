@@ -16,7 +16,7 @@ import {
   Star
 } from 'lucide-react'
 import { useState } from 'react'
-import '../globals.css'
+
 
 export default function Dashboard() {
   const [referralCode, setReferralCode] = useState('YBS2024JD789')

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthProvider, useAuth } from '../../contexts/AuthContext'
 import Register from '../../components/Register'
@@ -24,7 +24,9 @@ function RegisterContent() {
 export default function RegisterPage() {
   return (
     <AuthProvider>
-      <RegisterContent />
+      <Suspense>
+        <RegisterContent />
+      </Suspense>
     </AuthProvider>
   )
 }

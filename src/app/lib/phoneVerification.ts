@@ -1,4 +1,10 @@
 // lib/phoneVerification.ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 export async function sendPhoneVerification(phoneNumber: string) {
   const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes

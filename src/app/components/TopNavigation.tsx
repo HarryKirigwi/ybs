@@ -2,6 +2,7 @@
 'use client'
 import { Bell, Menu, X, Home, CheckSquare, Wallet, User, Settings, LogOut, Award, Users } from 'lucide-react'
 import { useState } from 'react'
+import { useUserData } from '../hooks/useUserData'
 
 interface TopNavigationProps {
   activeTab?: string
@@ -10,12 +11,33 @@ interface TopNavigationProps {
 
 export default function TopNavigation({ activeTab, setActiveTab }: TopNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  
-  const userData = {
-    name: 'John Doe',
-    balance: 15750,
-    level: 'Gold Member',
-    referrals: 35
+  const { userData, computedData, loading, error } = useUserData()
+
+  const getMembershipLevelDisplay = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'inactive':
+        return 'Inactive Member'
+      case 'bronze':
+        return 'Bronze Member'
+      case 'silver':
+        return 'Silver Member'
+      case 'gold':
+        return 'Gold Member'
+      case 'platinum':
+        return 'Platinum Member'
+      default:
+        return `${level.charAt(0).toUpperCase() + level.slice(1)} Member`
+    }
+  }
+
+  const getFirstName = (fullName: string) => {
+    return fullName.split(' ')[0]
+  }
+
+  const getDisplayBalance = () => {
+    if (!computedData) return 0
+    // You might want to show available_balance or total_earnings depending on your preference
+    return computedData.financials.available || computedData.financials.total
   }
 
   // Only include the 4 main pages that exist in the bottom navigation
@@ -26,10 +48,10 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
     { id: 'profile', label: 'Profile', icon: User, description: 'Update your account information' },
   ]
 
-  const quickActions = [
-    { id: 'referrals', label: 'My Referrals', icon: Users, value: userData.referrals },
-    { id: 'level', label: 'Member Level', icon: Award, value: userData.level },
-  ]
+  const quickActions = computedData ? [
+    { id: 'referrals', label: 'My Referrals', icon: Users, value: computedData.referrals.active },
+    { id: 'level', label: 'Member Level', icon: Award, value: computedData.membershipLevel.name },
+  ] : []
 
   const handleMenuItemClick = (tabId: string) => {
     if (setActiveTab) {
@@ -46,12 +68,25 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
     setIsMenuOpen(false)
   }
 
+  const handleLogout = () => {
+    // Clear localStorage and redirect to login
+    try {
+      localStorage.removeItem('user_data')
+      localStorage.removeItem('authToken') // Adjust based on your auth implementation
+      // You might want to call your auth context logout function here
+      window.location.href = '/login' // Adjust based on your routing
+    } catch (error) {
+      console.error('Error during logout:', error)
+    }
+  }
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
 
-  return (
-    <>
+  // Show loading state in header
+  if (loading) {
+    return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -66,15 +101,84 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
           
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-slate-800">{userData.name}</p>
-              <p className="text-xs text-blue-600 font-semibold">
-                KSH {userData.balance.toLocaleString()}
+              <div className="h-4 bg-slate-200 rounded animate-pulse mb-1 w-20"></div>
+              <div className="h-3 bg-slate-200 rounded animate-pulse w-16"></div>
+            </div>
+            <button className="p-2 hover:bg-slate-100 rounded-lg relative">
+              <Bell className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
+  // If error or no user data, show fallback
+  if (error || !userData || !computedData) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={toggleMenu}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-5 h-5 text-slate-600" />
+            </button>
+            <h1 className="text-xl font-bold text-blue-700">YBS</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-slate-800">Guest</p>
+              <p className="text-xs text-red-500 font-semibold">
+                {error ? 'Error Loading' : 'Login Required'}
               </p>
             </div>
             <button className="p-2 hover:bg-slate-100 rounded-lg relative">
               <Bell className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
+  return (
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={toggleMenu}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-5 h-5 text-slate-600" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-blue-700">YBS</h1>
+              {computedData.status.needsActivation && (
+                <p className="text-xs text-red-500 font-medium">Account Inactive</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-slate-800">{computedData.firstName}</p>
+              <p className="text-xs text-blue-600 font-semibold">
+                KSH {getDisplayBalance().toLocaleString()}
+              </p>
+              {computedData.financials.pending > 0 && (
+                <p className="text-xs text-orange-500">
+                  +{computedData.financials.pending.toLocaleString()} pending
+                </p>
+              )}
+            </div>
+            <button className="p-2 hover:bg-slate-100 rounded-lg relative">
+              <Bell className="w-5 h-5 text-slate-600" />
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                3
+                {userData.is_active ? '3' : '1'}
               </span>
             </button>
           </div>
@@ -95,7 +199,11 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
       }`}>
         <div className="flex flex-col h-full">
           {/* Menu Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+          <div className={`p-6 text-white ${
+            userData.is_active 
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700' 
+              : 'bg-gradient-to-r from-gray-600 to-gray-700'
+          }`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Menu</h2>
               <button 
@@ -111,12 +219,27 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <User className="w-6 h-6" />
               </div>
-              <div>
-                <p className="font-semibold">{userData.name}</p>
-                <p className="text-blue-100 text-sm">{userData.level}</p>
+              <div className="flex-1">
+                <p className="font-semibold">{userData.full_name}</p>
+                <p className={`text-sm ${userData.is_active ? 'text-blue-100' : 'text-gray-100'}`}>
+                  {getMembershipLevelDisplay(computedData.membershipLevel.name)}
+                </p>
+                <p className="text-xs text-white/70">@{userData.username}</p>
+                {computedData.status.needsActivation && (
+                  <p className="text-xs text-yellow-300 font-medium mt-1">⚠️ Account needs activation</p>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Account Status Alert */}
+          {computedData.status.needsActivation && (
+            <div className="mx-4 mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-yellow-800 text-sm font-medium">
+                Activate your account to unlock all features!
+              </p>
+            </div>
+          )}
 
           {/* Quick Stats */}
           <div className="p-4 border-b border-slate-200">
@@ -130,10 +253,27 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
                       <Icon className="w-4 h-4 text-slate-600" />
                       <span className="text-xs text-slate-600">{action.label}</span>
                     </div>
-                    <p className="font-bold text-slate-800">{action.value}</p>
+                    <p className="font-bold text-slate-800 text-sm">{action.value}</p>
                   </div>
                 )
               })}
+              
+              {/* Additional stats */}
+              <div className="bg-green-50 rounded-lg p-3">
+                <div className="flex items-center space-x-2 mb-1">
+                  <Wallet className="w-4 h-4 text-green-600" />
+                  <span className="text-xs text-slate-600">Available</span>
+                </div>
+                <p className="font-bold text-green-600 text-sm">KSH {computedData.financials.available.toLocaleString()}</p>
+              </div>
+              
+              <div className="bg-blue-50 rounded-lg p-3">
+                <div className="flex items-center space-x-2 mb-1">
+                  <Award className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs text-slate-600">Total Earned</span>
+                </div>
+                <p className="font-bold text-blue-600 text-sm">KSH {computedData.financials.total.toLocaleString()}</p>
+              </div>
             </div>
           </div>
 
@@ -155,7 +295,7 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
                         : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5 flex-shrink-0" />
                     <div className="text-left">
                       <p className="font-medium">{item.label}</p>
                       <p className="text-xs text-slate-500">{item.description}</p>
@@ -180,7 +320,10 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
                 <Settings className="w-5 h-5" />
                 <span className="font-medium">Settings</span>
               </button>
-              <button className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors">
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+              >
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Logout</span>
               </button>
@@ -189,6 +332,9 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
             {/* App Version */}
             <div className="mt-4 pt-4 border-t border-slate-200">
               <p className="text-xs text-slate-500 text-center">YBS Dashboard v2.1.0</p>
+              {/* <p className="text-xs text-slate-400 text-center mt-1">
+                User ID: {userData.email.slice(0, 8)}...
+              </p> */}
             </div>
           </div>
         </div>

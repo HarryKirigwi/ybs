@@ -2,7 +2,8 @@
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { UserProvider } from './contexts/UserContext'
 import AppContent from './components/AppContent'
 
 // Loading component
@@ -47,8 +48,10 @@ function ProtectedContent() {
 
 export default function HomePage() {
   return (
-    <AuthProvider>
-      <ProtectedContent />
-    </AuthProvider>
+    <UserProvider>
+      <AuthProvider>
+        <ProtectedContent />
+      </AuthProvider>
+    </UserProvider>
   )
 }

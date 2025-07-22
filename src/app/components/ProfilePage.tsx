@@ -32,16 +32,23 @@ import {
   MessageSquare,
   FileText,
   ExternalLink,
-  Camera
+  Camera,
+  RefreshCw
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUserData } from '../hooks/useUserData'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function ProfilePage() {
+  const { userData, computedData, loading, error, refreshUserData } = useUserData()
+  const { signOut, refreshUserData: authRefreshUserData } = useAuth()
+  
   const [isEditing, setIsEditing] = useState(false)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempUserData, setTempUserData] = useState({})
   const [showEditModal, setShowEditModal] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -72,77 +79,135 @@ export default function ProfilePage() {
     darkMode: false,
     sound: true
   })
-  
-  const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+254 700 123 456',
-    location: 'Nairobi, Kenya',
-    joinDate: '2024-01-10',
-    level: 'Gold Member',
-    totalReferrals: 35,
-    totalEarnings: 28900,
-    profilePicture: null
-  })
+
+  // Update form data when userData changes
+  useEffect(() => {
+    if (userData && computedData) {
+      setEditFormData({
+        name: userData.full_name || '',
+        email: userData.email || '',
+        phone: userData.phone_number || '',
+        location: '' // You might want to add location to your user data structure
+      })
+    }
+  }, [userData, computedData])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refreshUserData()
+    // Also refresh auth context data
+    await authRefreshUserData()
+    setIsRefreshing(false)
+  }
 
   const achievements = [
-    { id: 1, title: 'First Referral', description: 'Made your first referral', icon: Users, earned: true },
-    { id: 2, title: 'Top Performer', description: 'Reached 25 referrals', icon: Award, earned: true },
-    { id: 3, title: 'Consistent Earner', description: 'Earned for 7 consecutive days', icon: TrendingUp, earned: true },
-    { id: 4, title: 'Super Referrer', description: 'Reach 50 referrals', icon: Users, earned: false },
+    { 
+      id: 1, 
+      title: 'First Referral', 
+      description: 'Made your first referral', 
+      icon: Users, 
+      earned: (computedData?.referrals.active ?? 0) > 0
+    },
+    { 
+      id: 2, 
+      title: 'Top Performer', 
+      description: 'Reached 25 referrals', 
+      icon: Award, 
+      earned: (computedData?.referrals.active ?? 0) >= 25
+    },
+    { 
+      id: 3, 
+      title: 'Consistent Earner', 
+      description: 'Account activated and earning', 
+      icon: TrendingUp, 
+      earned: userData?.is_active && (computedData?.financials.available ?? 0) > 0
+    },
+    { 
+      id: 4, 
+      title: 'Super Referrer', 
+      description: 'Reach 50 referrals', 
+      icon: Users, 
+      earned: (computedData?.referrals.active ?? 0) >= 50
+    },
   ]
 
   const handleEditProfile = () => {
-    setEditFormData({
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      location: userData.location
-    })
+    if (userData && computedData) {
+      setEditFormData({
+        name: userData.full_name || '',
+        email: userData.email || '',
+        phone: userData.phone_number || '',
+        location: editFormData.location || ''
+      })
+    }
     setShowEditModal(true)
   }
 
-  const handleSaveProfile = () => {
-    // Update the userData with the form data
-    setUserData(prev => ({
-      ...prev,
-      name: editFormData.name,
-      email: editFormData.email,
-      phone: editFormData.phone,
-      location: editFormData.location
-    }))
-    
-    // Here you would typically save to backend
-    console.log('Saving profile data:', editFormData)
-    
-    // Close the modal
-    setShowEditModal(false)
-    
-    // Show success message (you can implement this with a toast notification)
-    alert('Profile updated successfully!')
+  const handleSaveProfile = async () => {
+    try {
+      // Here you would typically save to backend
+      // For now, we'll just show success and refresh data
+      console.log('Saving profile data:', editFormData)
+      
+      // In a real implementation, you'd make an API call here
+      // await updateUserProfile(editFormData)
+      
+      // Refresh the data after saving
+      await handleRefresh()
+      
+      // Close the modal
+      setShowEditModal(false)
+      
+      // Show success message
+      alert('Profile updated successfully!')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('Failed to update profile. Please try again.')
+    }
   }
 
   const handleCloseModal = () => {
     setShowEditModal(false)
     // Reset form data to original values
-    setEditFormData({
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone,
-      location: userData.location
-    })
+    if (userData) {
+      setEditFormData({
+        name: userData.full_name || '',
+        email: userData.email || '',
+        phone: userData.phone_number || '',
+        location: editFormData.location || ''
+      })
+    }
   }
 
   const handleEditField = (field: string) => {
     setEditingField(field)
-    setTempUserData({ [field]: (userData as any)[field] })
+    if (userData) {
+      const value = field === 'email' ? userData.email :
+                   field === 'phone' ? userData.phone_number :
+                   field === 'name' ? userData.full_name : ''
+      setTempUserData({ [field]: value })
+    }
   }
 
-  const handleSaveField = (field: string) => {
-    // Here you would typically save to backend
-    console.log(`Saving ${field}:`, tempUserData)
-    setEditingField(null)
-    setTempUserData({})
+  const handleSaveField = async (field: string) => {
+    try {
+      // Here you would typically save to backend
+      console.log(`Saving ${field}:`, tempUserData)
+      
+      // In a real implementation, you'd make an API call here
+      // await updateUserField(field, tempUserData[field])
+      
+      // Refresh data after saving
+      await handleRefresh()
+      
+      setEditingField(null)
+      setTempUserData({})
+      
+      alert(`${field} updated successfully!`)
+    } catch (error) {
+      console.error(`Error saving ${field}:`, error)
+      alert(`Failed to update ${field}. Please try again.`)
+    }
   }
 
   const handleCancelEdit = () => {
@@ -150,8 +215,47 @@ export default function ProfilePage() {
     setTempUserData({})
   }
 
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      const result = await signOut()
+      if (result.error) {
+        alert('Error logging out: ' + result.error.message)
+      }
+    }
+  }
+
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section)
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="p-4 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !userData || !computedData) {
+    return (
+      <div className="p-4 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Failed to load profile data'}</p>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {isRefreshing ? 'Retrying...' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const StatsCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
@@ -210,7 +314,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-800">{value}</p>
+              <p className="font-medium text-slate-800">{value || 'Not set'}</p>
               <button
                 onClick={() => handleEditField(field)}
                 className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -280,19 +384,34 @@ export default function ProfilePage() {
               <User className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">{userData.name}</h1>
-              <p className="text-blue-100">{userData.level}</p>
+              <h1 className="text-xl font-bold">{userData.full_name || 'User'}</h1>
+              <p className="text-blue-100">{computedData.membershipLevel.name}</p>
               <p className="text-sm text-blue-200">
-                Member since {new Date(userData.joinDate).toLocaleDateString()}
+                Member since {new Date(userData.created_at).toLocaleDateString()}
               </p>
+              {userData.phone_verified && (
+                <div className="flex items-center space-x-1 mt-1">
+                  <Phone className="w-3 h-3" />
+                  <span className="text-xs text-blue-200">Phone Verified</span>
+                </div>
+              )}
             </div>
           </div>
-          <button 
-            onClick={handleEditProfile}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <Edit2 className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button 
+              onClick={handleEditProfile}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -440,11 +559,29 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Stats Grid */}
+      {/* Account Status Alert */}
+      {computedData.status.needsActivation && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="flex items-center space-x-3">
+            <div className="bg-yellow-100 p-2 rounded-full">
+              <Award className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-yellow-800">Activate Your Account</h4>
+              <p className="text-sm text-yellow-700">Unlock all features and start earning!</p>
+            </div>
+            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+              Activate Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Grid - Using Real Data */}
       <div className="grid grid-cols-1 gap-4">
         <StatsCard 
           title="Total Referrals"
-          value={userData.totalReferrals}
+          value={computedData.referrals.active}
           subtitle="Active members"
           icon={Users}
           color="blue"
@@ -452,15 +589,15 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 gap-4">
           <StatsCard 
             title="Total Earnings"
-            value={`KSH ${userData.totalEarnings.toLocaleString()}`}
+            value={`KSH ${computedData.financials.total.toLocaleString()}`}
             subtitle="All time"
             icon={TrendingUp}
             color="green"
           />
           <StatsCard 
             title="Member Level"
-            value={userData.level.split(' ')[0]}
-            subtitle={userData.level}
+            value={computedData.membershipLevel.name.split(' ')[0]}
+            subtitle={computedData.membershipLevel.name}
             icon={Award}
             color="purple"
           />
@@ -474,21 +611,30 @@ export default function ProfilePage() {
         </div>
         <div className="p-4 space-y-4">
           <EditableField field="email" value={userData.email} type="email" icon={Mail} />
-          <EditableField field="phone" value={userData.phone} type="tel" icon={Phone} />
-          <EditableField field="location" value={userData.location} icon={MapPin} />
+          <EditableField field="phone" value={userData.phone_number} type="tel" icon={Phone} />
+          <EditableField field="name" value={userData.full_name} icon={User} />
           <div className="flex items-center space-x-3">
             <Calendar className="w-5 h-5 text-slate-500" />
             <div>
               <p className="text-sm text-slate-600">Join Date</p>
               <p className="font-medium text-slate-800">
-                {new Date(userData.joinDate).toLocaleDateString()}
+                {new Date(userData.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Award className="w-5 h-5 text-slate-500" />
+            <div>
+              <p className="text-sm text-slate-600">Account Status</p>
+              <p className={`font-medium ${userData.is_active ? 'text-green-600' : 'text-orange-600'}`}>
+                {userData.is_active ? 'Active' : 'Pending Activation'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Achievements */}
+      {/* Achievements - Using Real Data */}
       <div className="bg-white rounded-xl border border-slate-200">
         <div className="p-4 border-b border-slate-200">
           <h3 className="font-semibold text-slate-800">Achievements</h3>
@@ -561,15 +707,23 @@ export default function ProfilePage() {
             <div className="pt-4 border-t border-slate-200">
               <label className="block text-sm font-medium text-slate-700 mb-2">Language & Currency</label>
               <div className="grid grid-cols-2 gap-3">
-                <select className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>English</option>
-                  <option>Swahili</option>
-                  <option>French</option>
+                <select 
+                  value={preferences.language}
+                  onChange={(e) => setPreferences(prev => ({ ...prev, language: e.target.value }))}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="English">English</option>
+                  <option value="Swahili">Swahili</option>
+                  <option value="French">French</option>
                 </select>
-                <select className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>KSH</option>
-                  <option>USD</option>
-                  <option>EUR</option>
+                <select 
+                  value={preferences.currency}
+                  onChange={(e) => setPreferences(prev => ({ ...prev, currency: e.target.value }))}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="KSH">KSH</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
                 </select>
               </div>
             </div>
@@ -672,10 +826,58 @@ export default function ProfilePage() {
             </button>
           </div>
         </SettingsSection>
+
+        {/* User Data Summary for Debug */}
+        <SettingsSection title="Account Information" icon={User} sectionKey="account-info">
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-slate-600">User ID:</p>
+                <p className="font-mono text-xs text-slate-800">{userData.id}</p>
+              </div>
+              <div>
+                <p className="text-slate-600">Username:</p>
+                <p className="text-slate-800">{userData.username}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-slate-600">Phone Verified:</p>
+                <p className={userData.phone_verified ? 'text-green-600' : 'text-red-600'}>
+                  {userData.phone_verified ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-600">Referral Code:</p>
+                <p className="font-mono text-slate-800">{userData.referral_code}</p>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-slate-200">
+              <p className="text-slate-600 mb-2">Financial Summary:</p>
+              <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between">
+                  <span>Available:</span>
+                  <span className="font-semibold">KSH {userData.available_balance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Pending:</span>
+                  <span className="font-semibold">KSH {userData.pending_balance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Earned:</span>
+                  <span className="font-semibold">KSH {userData.total_earnings.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SettingsSection>
       </div>
 
       {/* Logout Button */}
-      <button className="w-full bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl flex items-center justify-center space-x-2 hover:bg-red-100 transition-colors">
+      <button 
+        onClick={handleLogout}
+        className="w-full bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl flex items-center justify-center space-x-2 hover:bg-red-100 transition-colors"
+      >
         <LogOut className="w-5 h-5" />
         <span className="font-medium">Logout</span>
       </button>

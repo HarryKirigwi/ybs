@@ -15,7 +15,7 @@ import {
   Eye
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../contexts/AuthContext'
 
 interface ReferralLinkData {
   code: string

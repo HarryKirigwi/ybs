@@ -1,4 +1,4 @@
-// app/components/Dashboard.tsx
+// components/Dashboard.tsx (Updated)
 'use client'
 import { 
   Copy, 
@@ -7,33 +7,33 @@ import {
   Brain, 
   Play, 
   ShoppingBag, 
-  ChevronRight, 
   TrendingUp,
   Eye,
   Share2,
   Gift,
   CheckCircle2,
-  Star
+  Star,
+  RefreshCw
 } from 'lucide-react'
 import { useState } from 'react'
-
+import { useUserData } from '../hooks/useUserData'
 
 export default function Dashboard() {
-  const [referralCode, setReferralCode] = useState('YBS2024JD789')
+  const { userData, computedData, loading, error, refreshUserData } = useUserData()
   const [copySuccess, setCopySuccess] = useState(false)
-  
-  const referralData = {
-    level1: { count: 15, earnings: 4500 },
-    level2: { count: 8, earnings: 800 },
-    level3: { count: 12, earnings: 600 }
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refreshUserData()
+    setIsRefreshing(false)
   }
 
-  const todaysEarnings = 450
-  const totalEarnings = referralData.level1.earnings + referralData.level2.earnings + referralData.level3.earnings
-
   const copyReferralCode = async () => {
+    if (!computedData?.referrals.code) return
+    
     try {
-      await navigator.clipboard.writeText(referralCode)
+      await navigator.clipboard.writeText(computedData.referrals.code)
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 2000)
     } catch (err) {
@@ -42,12 +42,14 @@ export default function Dashboard() {
   }
 
   const shareReferralCode = async () => {
+    if (!computedData?.referrals.code) return
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Join YBS - Young Billionaires Solutions',
-          text: `Use my referral code ${referralCode} to join YBS and start earning!`,
-          url: `https://ybs.com/ref/${referralCode}`
+          text: `Use my referral code ${computedData.referrals.code} to join YBS and start earning!`,
+          url: `https://ybs.com/ref/${computedData.referrals.code}`
         })
       } catch (err) {
         console.log('Error sharing:', err)
@@ -57,48 +59,111 @@ export default function Dashboard() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="p-4 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !userData || !computedData) {
+    return (
+      <div className="p-4 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Failed to load user data'}</p>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {isRefreshing ? 'Retrying...' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-4 space-y-6">
-      {/* Welcome Header */}
+      {/* Welcome Header with Refresh */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-1">Welcome back!</h2>
+            <h2 className="text-2xl font-bold mb-1">Welcome back, {computedData.firstName}!</h2>
             <p className="text-blue-100 text-sm">Ready to earn more today?</p>
+            {computedData.status.needsActivation && (
+              <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-2 mt-3">
+                <p className="text-yellow-100 text-xs">⚠️ Account not activated. Activate to start earning!</p>
+              </div>
+            )}
           </div>
           <div className="text-right">
-            <p className="text-xs text-blue-200 uppercase tracking-wide">Today's Earnings</p>
-            <p className="text-2xl font-bold">KSH {todaysEarnings.toLocaleString()}</p>
+            <p className="text-xs text-blue-200 uppercase tracking-wide">Available Balance</p>
+            <p className="text-2xl font-bold">KSH {computedData.financials.available.toLocaleString()}</p>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="mt-2 text-blue-200 hover:text-white transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats Row */}
+      {/* Real-time Quick Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
           <div className="flex items-center space-x-2 mb-2">
             <TrendingUp className="w-4 h-4 text-green-600" />
             <span className="text-xs text-slate-600 font-medium">Total Earned</span>
           </div>
-          <p className="text-lg font-bold text-slate-800">KSH {totalEarnings.toLocaleString()}</p>
+          <p className="text-lg font-bold text-slate-800">KSH {computedData.financials.total.toLocaleString()}</p>
+          {computedData.financials.pending > 0 && (
+            <p className="text-xs text-orange-600">+KSH {computedData.financials.pending.toLocaleString()} pending</p>
+          )}
         </div>
         
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
           <div className="flex items-center space-x-2 mb-2">
             <Users className="w-4 h-4 text-blue-600" />
-            <span className="text-xs text-slate-600 font-medium">Total Refs</span>
+            <span className="text-xs text-slate-600 font-medium">Active Refs</span>
           </div>
-          <p className="text-lg font-bold text-slate-800">{referralData.level1.count + referralData.level2.count + referralData.level3.count}</p>
+          <p className="text-lg font-bold text-slate-800">{computedData.referrals.active}</p>
         </div>
         
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
           <div className="flex items-center space-x-2 mb-2">
-            <Star className="w-4 h-4 text-yellow-500" />
+            <Star className={`w-4 h-4 ${computedData.membershipLevel.color}`} />
             <span className="text-xs text-slate-600 font-medium">Level</span>
           </div>
-          <p className="text-lg font-bold text-slate-800">Gold</p>
+          <p className={`text-lg font-bold ${computedData.membershipLevel.color}`}>
+            {computedData.membershipLevel.name}
+          </p>
         </div>
       </div>
+
+      {/* Account Status Alert */}
+      {computedData.status.needsActivation && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="flex items-center space-x-3">
+            <div className="bg-yellow-100 p-2 rounded-full">
+              <Star className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-yellow-800">Activate Your Account</h4>
+              <p className="text-sm text-yellow-700">Unlock all earning features and start making money!</p>
+            </div>
+            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+              Activate Now
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Referral Code Card */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
@@ -114,7 +179,9 @@ export default function Dashboard() {
         
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 mb-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-2xl font-bold text-blue-800 tracking-wider">{referralCode}</span>
+            <span className="font-mono text-2xl font-bold text-blue-800 tracking-wider">
+              {computedData.referrals.code}
+            </span>
             <div className="flex space-x-2">
               <button 
                 onClick={copyReferralCode}
@@ -148,68 +215,36 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Enhanced Referral Stats */}
+      {/* Real-time Balance Information */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800">Referral Performance</h3>
-            <p className="text-sm text-slate-600">Track your referral network growth</p>
+        <h3 className="text-xl font-bold text-slate-800 mb-4">Account Balance</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <p className="text-sm text-slate-600 mb-1">Available Balance</p>
+            <p className="text-2xl font-bold text-green-600">
+              KSH {computedData.financials.available.toLocaleString()}
+            </p>
           </div>
-          <button className="flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-            <Eye className="w-4 h-4 mr-2" />
-            View Tree
+          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+            <p className="text-sm text-slate-600 mb-1">Pending Balance</p>
+            <p className="text-2xl font-bold text-orange-600">
+              KSH {computedData.financials.pending.toLocaleString()}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 p-4 bg-blue-50 rounded-xl">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600">Total Value:</span>
+            <span className="text-xl font-bold text-blue-600">
+              KSH {computedData.financials.totalValue.toLocaleString()}
+            </span>
+          </div>
+        </div>
+        {computedData.financials.canWithdraw && (
+          <button className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors mt-4">
+            Withdraw Funds
           </button>
-        </div>
-        
-        <div className="space-y-4">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="font-semibold text-slate-800">Level 1 Referrals</span>
-                </div>
-                <p className="text-sm text-slate-600">KSH 300 per referral</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-slate-800">{referralData.level1.count}</p>
-                <p className="text-sm font-semibold text-green-600">+KSH {referralData.level1.earnings.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="font-semibold text-slate-800">Level 2 Referrals</span>
-                </div>
-                <p className="text-sm text-slate-600">KSH 100 per referral</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-slate-800">{referralData.level2.count}</p>
-                <p className="text-sm font-semibold text-blue-600">+KSH {referralData.level2.earnings.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="font-semibold text-slate-800">Level 3 Referrals</span>
-                </div>
-                <p className="text-sm text-slate-600">KSH 50 per referral</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-slate-800">{referralData.level3.count}</p>
-                <p className="text-sm font-semibold text-purple-600">+KSH {referralData.level3.earnings.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Earning Opportunities */}
@@ -226,8 +261,11 @@ export default function Dashboard() {
             </div>
             <h3 className="font-bold text-lg mb-2">Spin the Wheel</h3>
             <p className="text-sm opacity-90 mb-4">Win instant rewards up to KSH 500!</p>
-            <button className="w-full bg-white text-purple-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md">
-              Spin Now
+            <button 
+              className="w-full bg-white text-purple-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
+              disabled={!userData.is_active}
+            >
+              {userData.is_active ? 'Spin Now' : 'Activate Required'}
             </button>
           </div>
 
@@ -237,8 +275,11 @@ export default function Dashboard() {
             </div>
             <h3 className="font-bold text-lg mb-2">Answer Trivia</h3>
             <p className="text-sm opacity-90 mb-4">Test knowledge, earn KSH 20-100!</p>
-            <button className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md">
-              Start Quiz
+            <button 
+              className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
+              disabled={!userData.is_active}
+            >
+              {userData.is_active ? 'Start Quiz' : 'Activate Required'}
             </button>
           </div>
 
@@ -248,8 +289,11 @@ export default function Dashboard() {
             </div>
             <h3 className="font-bold text-lg mb-2">Watch Ads</h3>
             <p className="text-sm opacity-90 mb-4">Earn KSH 5-15 per video watched!</p>
-            <button className="w-full bg-white text-green-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md">
-              Watch Now
+            <button 
+              className="w-full bg-white text-green-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
+              disabled={!userData.is_active}
+            >
+              {userData.is_active ? 'Watch Now' : 'Activate Required'}
             </button>
           </div>
 
@@ -264,8 +308,11 @@ export default function Dashboard() {
               <li>• Deriv trading classes</li>
               <li>• AI trading bots</li>
             </ul>
-            <button className="w-full bg-white text-amber-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md">
-              Start Promoting
+            <button 
+              className="w-full bg-white text-amber-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
+              disabled={!userData.is_active}
+            >
+              {userData.is_active ? 'Start Promoting' : 'Activate Required'}
             </button>
           </div>
         </div>

@@ -2,7 +2,7 @@
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AuthProvider, useAuth } from '../../context/AuthContext'
+import { AuthProvider, useAuth } from '../../contexts/AuthContext'
 import Register from '../../components/Register'
 
 function RegisterContent() {

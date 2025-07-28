@@ -220,7 +220,7 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
                 <User className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold">{userData.full_name}</p>
+                <p className="font-semibold">{userData.fullName}</p>
                 <p className={`text-sm ${userData.is_active ? 'text-blue-100' : 'text-gray-100'}`}>
                   {getMembershipLevelDisplay(computedData.membershipLevel.name)}
                 </p>

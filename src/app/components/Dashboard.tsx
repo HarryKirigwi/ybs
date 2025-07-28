@@ -49,7 +49,7 @@ export default function Dashboard() {
         await navigator.share({
           title: 'Join YBS - Young Billionaires Solutions',
           text: `Use my referral code ${computedData.referrals.code} to join YBS and start earning!`,
-          url: `https://ybs.com/ref/${computedData.referrals.code}`
+          url: `https://ybslimited.co.ke/ref/${computedData.referrals.code}`
         })
       } catch (err) {
         console.log('Error sharing:', err)
@@ -133,7 +133,7 @@ export default function Dashboard() {
             <Users className="w-4 h-4 text-blue-600" />
             <span className="text-xs text-slate-600 font-medium">Active Refs</span>
           </div>
-          <p className="text-lg font-bold text-slate-800">{computedData.referrals.active}</p>
+          <p className="text-lg font-bold text-slate-800">{computedData.referrals.total}</p>
         </div>
         
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
@@ -236,7 +236,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <span className="text-slate-600">Total Value:</span>
             <span className="text-xl font-bold text-blue-600">
-              KSH {computedData.financials.totalValue.toLocaleString()}
+              KSH {computedData.financials.total.toLocaleString()}
             </span>
           </div>
         </div>

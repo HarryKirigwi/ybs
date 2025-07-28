@@ -41,7 +41,6 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
   const [verificationCode, setVerificationCode] = useState('')
   const [formData, setFormData] = useState({
     fullName: '',
-    username: '',
     email: '',
     phoneNumber: '',
     password: '',
@@ -126,14 +125,6 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
       newErrors.fullName = 'Full name must be at least 2 characters'
     }
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required'
-    } else if (formData.username.trim().length < 3) {
-      newErrors.username = 'Username must be at least 3 characters'
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, and underscores'
-    }
-    
     if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -168,13 +159,15 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validateForm()) return
-    
     setErrors({})
-    
-    const result = await registerUser(formData)
-
+    const result = await registerUser({
+      fullName: formData.fullName,
+      email: formData.email,
+      phoneNumber: formData.phoneNumber,
+      password: formData.password,
+      referralCode: formData.referralCode || undefined
+    })
     if (result.success) {
       setUserId(result.user_id || '')
       // Send phone verification code
@@ -182,11 +175,9 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
       setStep(2) // Move to phone verification
       setSuccessMessage('Registration successful! Please verify your phone number.')
     } else {
-      if (result.error?.includes('Phone number already registered')) {
+      if (result.error === 'Phone number already registered') {
         setErrors({ phoneNumber: 'This phone number is already registered' })
-      } else if (result.error?.includes('Username already taken')) {
-        setErrors({ username: 'This username is already taken' })
-      } else if (result.error?.includes('already registered')) {
+      } else if (result.error === 'Email address already registered') {
         setErrors({ email: 'This email is already registered' })
       } else {
         setErrors({ submit: result.error || 'Registration failed. Please try again.' })
@@ -417,38 +408,6 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
                 <div className="mt-2 flex items-center space-x-2 text-red-600">
                   <AlertCircle className="w-4 h-4" />
                   <span className="text-sm">{errors.fullName}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-slate-700 mb-2">
-                Username
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 ${
-                    errors.username
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'
-                  }`}
-                  placeholder="Choose a username"
-                />
-              </div>
-              {errors.username && (
-                <div className="mt-2 flex items-center space-x-2 text-red-600">
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">{errors.username}</span>
                 </div>
               )}
             </div>

@@ -82,15 +82,15 @@ export default function ProfilePage() {
 
   // Update form data when userData changes
   useEffect(() => {
-    if (userData && computedData) {
+    if (userData) {
       setEditFormData({
-        name: userData.full_name || '',
+        name: userData.fullName || '',
         email: userData.email || '',
-        phone: userData.phone_number || '',
-        location: '' // You might want to add location to your user data structure
+        phone: userData.phoneNumber || '',
+        location: '' // Add location if available in UserData
       })
     }
-  }, [userData, computedData])
+  }, [userData])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -134,9 +134,9 @@ export default function ProfilePage() {
   const handleEditProfile = () => {
     if (userData && computedData) {
       setEditFormData({
-        name: userData.full_name || '',
+        name: userData.fullName || '',
         email: userData.email || '',
-        phone: userData.phone_number || '',
+        phone: userData.phoneNumber || '',
         location: editFormData.location || ''
       })
     }
@@ -171,9 +171,9 @@ export default function ProfilePage() {
     // Reset form data to original values
     if (userData) {
       setEditFormData({
-        name: userData.full_name || '',
+        name: userData.fullName || '',
         email: userData.email || '',
-        phone: userData.phone_number || '',
+        phone: userData.phoneNumber || '',
         location: editFormData.location || ''
       })
     }
@@ -183,8 +183,8 @@ export default function ProfilePage() {
     setEditingField(field)
     if (userData) {
       const value = field === 'email' ? userData.email :
-                   field === 'phone' ? userData.phone_number :
-                   field === 'name' ? userData.full_name : ''
+                   field === 'phone' ? userData.phoneNumber :
+                   field === 'name' ? userData.fullName : ''
       setTempUserData({ [field]: value })
     }
   }
@@ -217,9 +217,10 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
-      const result = await signOut()
-      if (result.error) {
-        alert('Error logging out: ' + result.error.message)
+      try {
+        await signOut()
+      } catch (error: any) {
+        alert('Error logging out: ' + (error?.message || 'Unknown error'))
       }
     }
   }
@@ -384,10 +385,10 @@ export default function ProfilePage() {
               <User className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">{userData.full_name || 'User'}</h1>
-              <p className="text-blue-100">{computedData.membershipLevel.name}</p>
+              <h1 className="text-xl font-bold">{userData.fullName || 'User'}</h1>
+              <p className="text-blue-100">{userData.userLevel}</p>
               <p className="text-sm text-blue-200">
-                Member since {new Date(userData.created_at).toLocaleDateString()}
+                Member since {new Date(userData.createdAt).toLocaleDateString()}
               </p>
               {userData.phone_verified && (
                 <div className="flex items-center space-x-1 mt-1">
@@ -581,7 +582,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 gap-4">
         <StatsCard 
           title="Total Referrals"
-          value={computedData.referrals.active}
+          value={computedData.referrals.total}
           subtitle="Active members"
           icon={Users}
           color="blue"
@@ -611,14 +612,14 @@ export default function ProfilePage() {
         </div>
         <div className="p-4 space-y-4">
           <EditableField field="email" value={userData.email} type="email" icon={Mail} />
-          <EditableField field="phone" value={userData.phone_number} type="tel" icon={Phone} />
-          <EditableField field="name" value={userData.full_name} icon={User} />
+          <EditableField field="phone" value={userData.phoneNumber} type="tel" icon={Phone} />
+          <EditableField field="name" value={userData.fullName} icon={User} />
           <div className="flex items-center space-x-3">
             <Calendar className="w-5 h-5 text-slate-500" />
             <div>
               <p className="text-sm text-slate-600">Join Date</p>
               <p className="font-medium text-slate-800">
-                {new Date(userData.created_at).toLocaleDateString()}
+                {new Date(userData.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -849,7 +850,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-slate-600">Referral Code:</p>
-                <p className="font-mono text-slate-800">{userData.referral_code}</p>
+                <p className="font-mono text-slate-800">{userData.referralCode}</p>
               </div>
             </div>
             <div className="pt-3 border-t border-slate-200">
@@ -857,15 +858,15 @@ export default function ProfilePage() {
               <div className="bg-slate-50 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between">
                   <span>Available:</span>
-                  <span className="font-semibold">KSH {userData.available_balance.toLocaleString()}</span>
+                  <span className="font-semibold">KSH {userData.availableBalance.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Pending:</span>
-                  <span className="font-semibold">KSH {userData.pending_balance.toLocaleString()}</span>
+                  <span className="font-semibold">KSH {userData.pendingEarnings.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Earned:</span>
-                  <span className="font-semibold">KSH {userData.total_earnings.toLocaleString()}</span>
+                  <span className="font-semibold">KSH {userData.totalEarned.toLocaleString()}</span>
                 </div>
               </div>
             </div>

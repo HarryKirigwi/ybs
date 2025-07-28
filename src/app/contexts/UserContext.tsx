@@ -175,6 +175,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         const response = await fetch(apiUrl('/user/profile'), {
           method: 'GET',
+          mode: 'cors',
           credentials: 'include',
         });
 

@@ -140,6 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await fetch(apiUrl('/user/profile'), {
         method: 'GET',
         credentials: 'include',
+        mode: 'cors',
       })
       
       if (response.ok) {
@@ -190,6 +191,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify({
           fullName: userData.fullName,
           email: userData.email,
@@ -251,6 +253,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify({
           phoneNumber: phoneNumber.trim(),
           password: password,
@@ -303,6 +306,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await fetch(apiUrl('/auth/logout'), {
         method: 'POST',
         credentials: 'include',
+        mode: 'cors',
       })
     } catch {}
     setUser(null)
@@ -317,6 +321,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify({
           action: 'verify',
           phoneNumber: phoneNumber,
@@ -350,6 +355,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify({
           action: 'send',
           phone_number: phoneNumber
@@ -387,6 +393,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        mode: 'cors',
       })
       const data = await response.json()
       if (response.ok && data.success && data.data && data.data.valid) {
@@ -426,7 +433,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
     try {
-      const response = await fetch(apiUrl('/auth/me'), { method: 'GET', credentials: 'include' })
+      const response = await fetch(apiUrl('/auth/me'), { method: 'GET', credentials: 'include', mode: 'cors' })
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {

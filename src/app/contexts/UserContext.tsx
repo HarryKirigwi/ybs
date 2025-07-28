@@ -1,4 +1,3 @@
-// contexts/UserContext.tsx
 'use client';
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 
@@ -32,13 +31,14 @@ function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
 ): T {
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  
+  // FIX: Initialize useRef with null
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   return useCallback(((...args: Parameters<T>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     timeoutRef.current = setTimeout(() => {
       callback(...args);
     }, delay);
@@ -60,11 +60,11 @@ class RateLimiter {
     const now = Date.now();
     // Remove requests older than the window
     this.requests = this.requests.filter(time => now - time < this.windowMs);
-    
+
     if (this.requests.length >= this.maxRequests) {
       return false;
     }
-    
+
     this.requests.push(now);
     return true;
   }
@@ -130,7 +130,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
-  
+
   // Rate limiter instance
   const rateLimiterRef = useRef(new RateLimiter(3, 60000)); // 3 requests per minute
   const lastRequestRef = useRef<number>(0);
@@ -150,14 +150,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setRetryAfter(Math.ceil(retryAfterMs / 1000));
       setError('Too many requests. Please wait before trying again.');
       setLoading(false);
-      
+
       // Auto-retry after rate limit expires
       setTimeout(() => {
         setRateLimited(false);
         setRetryAfter(0);
         fetchUserData();
       }, retryAfterMs);
-      
+
       return;
     }
 
@@ -172,7 +172,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setError(null);
         setRateLimited(false);
         lastRequestRef.current = Date.now();
-        
+
         const response = await fetch(apiUrl('/user/profile'), {
           method: 'GET',
           credentials: 'include',
@@ -182,27 +182,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           if (response.status === 429) {
             const retryAfterHeader = response.headers.get('Retry-After');
             const retrySeconds = retryAfterHeader ? parseInt(retryAfterHeader) : 60;
-            
+
             setRateLimited(true);
             setRetryAfter(retrySeconds);
             setError(`Too many requests. Please wait ${retrySeconds} seconds.`);
-            
+
             // Auto-retry after the specified time
             setTimeout(() => {
               setRateLimited(false);
               setRetryAfter(0);
               fetchUserData();
             }, retrySeconds * 1000);
-            
+
             return;
           }
-          
+
           if (response.status === 401) {
             setUserData(null);
             setError(null);
             return;
           }
-          
+
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -238,7 +238,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       console.log('Rate limited, skipping refresh');
       return;
     }
-    
+
     setLoading(true);
     await fetchUserData();
   }, [fetchUserData, rateLimited]);
@@ -252,7 +252,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
     try {
       setError(null);
-      
+
       const response = await fetch(apiUrl('/user/update'), {
         method: 'PUT',
         headers: {

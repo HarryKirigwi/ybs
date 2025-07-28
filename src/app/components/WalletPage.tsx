@@ -179,7 +179,7 @@ export default function WalletPage() {
     balance: computedData.financials.available,
     pendingEarnings: computedData.financials.pending,
     totalEarnings: computedData.financials.total,
-    totalValue: computedData.financials.totalValue,
+    totalValue: computedData.financials.total,
     canWithdraw: computedData.financials.canWithdraw,
     minimumWithdraw: 1000 // This remains hardcoded for now
   }
@@ -367,7 +367,7 @@ export default function WalletPage() {
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-slate-500">Member Since:</span>
-            <span className="text-slate-700">{new Date(userData.created_at).toLocaleDateString()}</span>
+            <span className="text-slate-700">{new Date(userData.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
       </div>

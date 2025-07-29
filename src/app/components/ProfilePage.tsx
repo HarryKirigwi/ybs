@@ -38,11 +38,12 @@ import {
 import { useState, useEffect } from 'react'
 import { useUserData } from '../hooks/useUserData'
 import { useAuth } from '../contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useLogout } from '../hooks/useLogout'
 
 export default function ProfilePage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
-  const { signOut, refreshUserData: authRefreshUserData } = useAuth()
+  const { refreshUserData: authRefreshUserData } = useAuth()
+  const {logout} = useLogout()
 
   
   const [isEditing, setIsEditing] = useState(false)
@@ -229,12 +230,9 @@ export default function ProfilePage() {
 
 
 
-const router = useRouter();
-
-const handleLogout = async () => {
-  await signOut();
-  router.push('/auth/login');
-}
+ const handleLogout = () => {
+    logout('/auth/login') // Custom redirect path
+  }
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section)

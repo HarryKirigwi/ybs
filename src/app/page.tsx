@@ -116,39 +116,10 @@ function ProtectedContent() {
             return
           }
 
-          // Check if account activation is required
-          if (userData.accountStatus === 'UNVERIFIED') {
-            console.log('💳 Account activation required, checking current path...')
-            
-            // FIXED: Check if we're already on the activate-account page to prevent loops
-            if (pathname === '/activate-account') {
-              console.log('📍 Already on activate-account page, allowing access')
-              if (mounted) {
-                setIsInitializing(false)
-              }
-              return
-            }
-            
-            // FIXED: Check if we're on the main dashboard route before redirecting
-            if (pathname === '/' || pathname === '/dashboard') {
-              console.log('🔄 Redirecting to activate-account page...')
-              if (mounted) {
-                router.replace('/activate-account')
-              }
-              return
-            } else {
-              // FIXED: If we're on any other route and account is unverified, 
-              // allow access but user will see limited functionality
-              console.log('📍 On other route with unverified account, allowing limited access')
-              if (mounted) {
-                setIsInitializing(false)
-              }
-              return
-            }
-          }
+          // Account activation check removed - allow all users regardless of status
 
-          // User is fully authenticated, verified, and active
-          console.log('🎉 User is fully authenticated and active')
+          // User is authenticated and phone verified - allow access regardless of account status
+          console.log('🎉 User is authenticated and phone verified, allowing access')
           if (mounted) {
             setIsInitializing(false)
           }
@@ -251,15 +222,14 @@ function ProtectedContent() {
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
   }
 
-  // FIXED: Allow users with UNVERIFIED status to access the app
-  // They can activate later, but shouldn't be blocked from using basic features
+  // Only check for suspended accounts - allow all other statuses
   if (userData.accountStatus === 'SUSPENDED') {
     return <AuthError error="Your account has been suspended. Please contact support." onRetry={handleRetry} />
   }
 
   // User is authenticated and phone verified - show the main app content
-  // (regardless of account status - UNVERIFIED users can still access dashboard with limitations)
-  console.log('🎉 All checks passed, showing main app content')
+  // (all account statuses allowed: UNVERIFIED, ACTIVE, etc.)
+  console.log('🎉 All checks passed, showing main app content for user with status:', userData.accountStatus)
   return <AppContent />
 }
 

@@ -52,11 +52,11 @@ function ActivateAccountContent() {
   const [showConfirmation, setShowConfirmation] = useState(false)
 
   // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/auth/login')
-    }
-  }, [isAuthenticated, router])
+//   useEffect(() => {
+//     if (!isAuthenticated) {
+//       router.replace('/auth/login')
+//     }
+//   }, [isAuthenticated, router])
 
   // Redirect if already activated
   useEffect(() => {

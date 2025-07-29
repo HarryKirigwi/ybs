@@ -39,11 +39,13 @@ import { useState, useEffect } from 'react'
 import { useUserData } from '../hooks/useUserData'
 import { useAuth } from '../contexts/AuthContext'
 import { useLogout } from '../hooks/useLogout'
+import { useActivation } from '../hooks/useActivation'
 
 export default function ProfilePage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
   const { refreshUserData: authRefreshUserData } = useAuth()
-  const {logout} = useLogout()
+  const { logout } = useLogout()
+  const { handleActivateNow } = useActivation()
 
   
   const [isEditing, setIsEditing] = useState(false)
@@ -580,7 +582,10 @@ export default function ProfilePage() {
               <h4 className="font-semibold text-yellow-800">Activate Your Account</h4>
               <p className="text-sm text-yellow-700">Unlock all features and start earning!</p>
             </div>
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+            <button 
+              onClick={handleActivateNow}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors"
+            >
               Activate Now
             </button>
           </div>

@@ -17,9 +17,11 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useUserData } from '../hooks/useUserData'
+import { useActivation } from '../hooks/useActivation'
 
 export default function Dashboard() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
+  const { handleActivateNow } = useActivation()
   const [copySuccess, setCopySuccess] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -158,7 +160,10 @@ export default function Dashboard() {
               <h4 className="font-semibold text-yellow-800">Activate Your Account</h4>
               <p className="text-sm text-yellow-700">Unlock all earning features and start making money!</p>
             </div>
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+            <button 
+              onClick={handleActivateNow}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors"
+            >
               Activate Now
             </button>
           </div>
@@ -256,49 +261,49 @@ export default function Dashboard() {
         
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
               <Zap className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-2">Spin the Wheel</h3>
             <p className="text-sm opacity-90 mb-4">Win instant rewards up to KSH 500!</p>
             <button 
-              className="w-full bg-white text-purple-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
-              disabled={!userData.is_active}
+              onClick={userData.is_active ? undefined : handleActivateNow}
+              className="w-full bg-white text-purple-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md"
             >
               {userData.is_active ? 'Spin Now' : 'Activate Required'}
             </button>
           </div>
 
           <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
               <Brain className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-2">Answer Trivia</h3>
             <p className="text-sm opacity-90 mb-4">Test knowledge, earn KSH 20-100!</p>
             <button 
-              className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
-              disabled={!userData.is_active}
+              onClick={userData.is_active ? undefined : handleActivateNow}
+              className="w-full bg-white text-blue-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md"
             >
               {userData.is_active ? 'Start Quiz' : 'Activate Required'}
             </button>
           </div>
 
           <div className="bg-gradient-to-br from-green-600 via-green-700 to-teal-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
               <Play className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-2">Watch Ads</h3>
             <p className="text-sm opacity-90 mb-4">Earn KSH 5-15 per video watched!</p>
             <button 
-              className="w-full bg-white text-green-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
-              disabled={!userData.is_active}
+              onClick={userData.is_active ? undefined : handleActivateNow}
+              className="w-full bg-white text-green-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md"
             >
               {userData.is_active ? 'Watch Now' : 'Activate Required'}
             </button>
           </div>
 
           <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-2">Promote Products</h3>
@@ -309,8 +314,8 @@ export default function Dashboard() {
               <li>• AI trading bots</li>
             </ul>
             <button 
-              className="w-full bg-white text-amber-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md disabled:opacity-50"
-              disabled={!userData.is_active}
+              onClick={userData.is_active ? undefined : handleActivateNow}
+              className="w-full bg-white text-amber-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors shadow-md"
             >
               {userData.is_active ? 'Start Promoting' : 'Activate Required'}
             </button>

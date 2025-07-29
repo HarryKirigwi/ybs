@@ -15,9 +15,11 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useUserData } from '../hooks/useUserData'
+import { useActivation } from '../hooks/useActivation'
 
 export default function WalletPage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
+  const { handleActivateNow } = useActivation()
   const [showBalance, setShowBalance] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -231,7 +233,10 @@ export default function WalletPage() {
               <h4 className="font-semibold text-yellow-800">Account Not Activated</h4>
               <p className="text-sm text-yellow-700">Activate your account to enable withdrawals and unlock all wallet features.</p>
             </div>
-            <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+            <button 
+              onClick={handleActivateNow}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors"
+            >
               Activate Now
             </button>
           </div>

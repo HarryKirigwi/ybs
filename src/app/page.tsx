@@ -70,6 +70,7 @@ function ProtectedContent() {
   const router = useRouter()
   const [authError, setAuthError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -80,12 +81,13 @@ function ProtectedContent() {
         
         // Wait for the initial auth check to complete
         if (isLoading) {
+          console.log('🔄 Auth context is still loading...')
           return
         }
 
         // If we already have user data and are authenticated, proceed with validation
         if (isAuthenticated && user && userData) {
-          console.log('User authenticated:', {
+          console.log('✅ User authenticated:', {
             userId: user.id,
             email: user.email,
             phoneNumber: user.phoneNumber,
@@ -105,9 +107,8 @@ function ProtectedContent() {
 
           // Check if phone verification is required
           if (!userData.phoneVerified) {
-            console.log('Phone verification required, redirecting...')
+            console.log('📱 Phone verification required, showing reminder...')
             if (mounted) {
-              // Instead of redirecting, show verification reminder
               setAuthError('PHONE_VERIFICATION_REQUIRED')
             }
             return
@@ -115,13 +116,26 @@ function ProtectedContent() {
 
           // Check if account activation is required
           if (userData.accountStatus === 'UNVERIFIED') {
-            console.log('Account activation required, redirecting to activate-account...')
+            console.log('💳 Account activation required, checking current path...')
+            
+            // Check if we're already on the activate-account page to prevent loops
+            if (typeof window !== 'undefined' && window.location.pathname === '/activate-account') {
+              console.log('📍 Already on activate-account page, allowing access')
+              if (mounted) {
+                setIsInitializing(false)
+              }
+              return
+            }
+            
+            console.log('🔄 Redirecting to activate-account page...')
             if (mounted) {
               router.replace('/activate-account')
             }
+            return
           }
 
           // User is fully authenticated, verified, and active
+          console.log('🎉 User is fully authenticated and active')
           if (mounted) {
             setIsInitializing(false)
           }
@@ -129,14 +143,16 @@ function ProtectedContent() {
         }
 
         // If not authenticated or missing user data, try to check auth status
-        if (!isAuthenticated || !user || !userData) {
-          console.log('Checking authentication status...')
+        // But only do this once to prevent loops
+        if ((!isAuthenticated || !user || !userData) && !hasCheckedAuth) {
+          console.log('🔍 Checking authentication status...')
+          setHasCheckedAuth(true)
           const isValid = await checkAuthStatus()
           
           if (!mounted) return
 
           if (!isValid) {
-            console.log('Authentication check failed, redirecting to login...')
+            console.log('❌ Authentication check failed, redirecting to login...')
             router.replace('/auth/login')
             return
           }
@@ -146,8 +162,15 @@ function ProtectedContent() {
           return
         }
 
+        // If we've already checked auth and still don't have user data, redirect to login
+        if (hasCheckedAuth && (!isAuthenticated || !user || !userData)) {
+          console.log('❌ Auth check completed but no valid session, redirecting to login...')
+          router.replace('/auth/login')
+          return
+        }
+
       } catch (error) {
-        console.error('Auth initialization error:', error)
+        console.error('❌ Auth initialization error:', error)
         if (mounted) {
           setAuthError('Failed to verify authentication. Please try again.')
           setIsInitializing(false)
@@ -160,12 +183,13 @@ function ProtectedContent() {
     return () => {
       mounted = false
     }
-  }, [isAuthenticated, isLoading, user, userData, router, checkAuthStatus])
+  }, [isAuthenticated, isLoading, user, userData, router, checkAuthStatus, hasCheckedAuth])
 
   // Handle auth error retry
   const handleRetry = async () => {
     setAuthError(null)
     setIsInitializing(true)
+    setHasCheckedAuth(false) // Reset the auth check flag
     
     try {
       const isValid = await checkAuthStatus()
@@ -203,14 +227,14 @@ function ProtectedContent() {
 
   // Final validation: ensure user is authenticated and has valid data
   if (!isAuthenticated || !user || !userData) {
-    console.log('Final check failed, redirecting to login...')
+    console.log('❌ Final check failed, redirecting to login...')
     router.replace('/auth/login')
     return <LoadingSpinner />
   }
 
   // Final safety check: ensure phone is verified
   if (!userData.phoneVerified) {
-    console.log('Phone verification check failed, showing reminder...')
+    console.log('📱 Phone verification check failed, showing reminder...')
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
   }
 
@@ -222,7 +246,7 @@ function ProtectedContent() {
 
   // User is authenticated and phone verified - show the main app content
   // (regardless of account status - UNVERIFIED users can still access dashboard)
-  console.log('✅ All checks passed, showing main app content')
+  console.log('🎉 All checks passed, showing main app content')
   return <AppContent />
 }
 

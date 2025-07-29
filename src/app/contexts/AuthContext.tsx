@@ -204,11 +204,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (data.success && data.data) {
           setUser(data.data)
           setUserData(data.data)
+          console.log('✅ Auth check successful:', {
+            userId: data.data.id,
+            accountStatus: data.data.accountStatus,
+            phoneVerified: data.data.phoneVerified
+          })
           return true
         }
       }
       
       // If we get here, authentication failed
+      console.log('❌ Auth check failed - no valid session')
       setUser(null)
       setUserData(null)
       return false

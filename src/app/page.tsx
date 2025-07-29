@@ -65,39 +65,6 @@ function PhoneVerificationReminder({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-// Account activation reminder component
-function AccountActivationReminder({ userData, onRetry }: { userData: any; onRetry: () => void }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-slate-50 flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto p-6">
-        <div className="mb-4">
-          <svg className="w-16 h-16 text-orange-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold text-slate-800 mb-2">Account Activation Required</h2>
-        <p className="text-slate-600 mb-4">
-          Welcome to YBS! Please activate your account with KSH 600 to start earning.
-        </p>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-blue-800">
-            <strong>Your Benefits:</strong>
-            <br />• Earn KSH 300 per Level 1 referral
-            <br />• Multi-level referral system
-            <br />• Spin the wheel, watch ads, and more!
-          </p>
-        </div>
-        <button
-          onClick={onRetry}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          Activate Account
-        </button>
-      </div>
-    </div>
-  )
-}
-
 function ProtectedContent() {
   const { isAuthenticated, isLoading, user, userData, checkAuthStatus } = useAuth()
   const router = useRouter()
@@ -148,13 +115,11 @@ function ProtectedContent() {
 
           // Check if account activation is required
           if (userData.accountStatus === 'UNVERIFIED') {
-            console.log('Account activation required')
+            console.log('Account activation required, redirecting to activate-account...')
             if (mounted) {
-              setAuthError('ACCOUNT_ACTIVATION_REQUIRED')
+              router.replace('/activate-account')
             }
-            // Instead of redirecting, show activation reminder
-            router.replace('/activate-account');
-            
+            return
           }
 
           // User is fully authenticated, verified, and active
@@ -222,12 +187,7 @@ function ProtectedContent() {
     router.replace('/auth/verify-phone')
   }
 
-  // Handle account activation
-  const handleAccountActivation = () => {
-    router.replace('/activate-account')
-  }
-
- // Show loading while initializing or while auth context is loading
+  // Show loading while initializing or while auth context is loading
   if (isLoading || isInitializing) {
     return <LoadingSpinner />
   }
@@ -235,10 +195,6 @@ function ProtectedContent() {
   // Handle specific error states
   if (authError === 'PHONE_VERIFICATION_REQUIRED') {
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
-  }
-
-  if (authError === 'ACCOUNT_ACTIVATION_REQUIRED') {
-    return <AccountActivationReminder userData={userData} onRetry={handleAccountActivation} />
   }
 
   // Show general auth error if present
@@ -259,17 +215,14 @@ function ProtectedContent() {
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
   }
 
-  // Check account status one more time
-  if (userData.accountStatus === 'UNVERIFIED') {
-    console.log('Account activation check, showing reminder...')
-    return <AccountActivationReminder userData={userData} onRetry={handleAccountActivation} />
-  }
-
+  // Check account status - allow UNVERIFIED users to proceed to dashboard
+  // (they can activate later via the activate-account page)
   if (userData.accountStatus === 'SUSPENDED') {
     return <AuthError error="Your account has been suspended. Please contact support." onRetry={handleRetry} />
   }
 
-  // User is authenticated, phone verified, and active - show the main app content
+  // User is authenticated and phone verified - show the main app content
+  // (regardless of account status - UNVERIFIED users can still access dashboard)
   console.log('✅ All checks passed, showing main app content')
   return <AppContent />
 }

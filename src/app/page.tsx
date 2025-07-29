@@ -226,9 +226,9 @@ function ProtectedContent() {
   }
 
   // Show loading while initializing or while auth context is loading
-  if (isLoading || isInitializing) {
-    return <LoadingSpinner />
-  }
+  // if (isLoading || isInitializing) {
+  //   return <LoadingSpinner />
+  // }
 
   // Handle specific error states
   if (authError === 'PHONE_VERIFICATION_REQUIRED') {

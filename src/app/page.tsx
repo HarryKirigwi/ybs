@@ -119,7 +119,6 @@ function ProtectedContent() {
             if (mounted) {
               router.replace('/activate-account')
             }
-            return
           }
 
           // User is fully authenticated, verified, and active

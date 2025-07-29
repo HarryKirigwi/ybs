@@ -389,7 +389,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const sendVerificationCode = async (phoneNumber: string) => {
     try {
-      const response = await fetch(apiUrl('/verify-phone'), {
+      const response = await fetch(apiUrl('/auth/verify-phone'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

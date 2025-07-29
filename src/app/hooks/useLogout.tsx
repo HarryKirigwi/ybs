@@ -7,7 +7,7 @@ export function useLogout() {
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const logout = async (redirectPath: string = '/login') => {
+  const logout = async (redirectPath: string = '/auth/login') => {
     setIsLoggingOut(true)
     try {
       const result = await signOut()

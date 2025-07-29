@@ -252,7 +252,7 @@ function ProtectedContent() {
   }
 
   // Final safety check: ensure phone is verified
-  if (!userData.phoneVerified || userData.phoneVerificationStatus !== 'VERIFIED') {
+  if (!userData.phoneVerified) {
     console.log('Phone verification check failed, showing reminder...')
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
   }

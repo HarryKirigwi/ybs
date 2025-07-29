@@ -20,6 +20,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { useUserData } from '../hooks/useUserData'
+import { UserProvider } from '../contexts/UserContext'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
 const ACTIVATION_AMOUNT = process.env.NEXT_PUBLIC_MPESA_ACTIVATION_AMOUNT || '600'
@@ -414,7 +415,9 @@ function ActivateAccountContent() {
 export default function ActivateAccount() {
   return (
     <AuthProvider>
-      <ActivateAccountContent />
+      <UserProvider>
+        <ActivateAccountContent />
+      </UserProvider>
     </AuthProvider>
   )
 }

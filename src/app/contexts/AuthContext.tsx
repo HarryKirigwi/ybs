@@ -89,6 +89,7 @@ interface AuthContextType {
     password: string
   ) => Promise<{
     success: boolean
+    statusCode?: number
     user_id?: string
     profile?: UserData
     error?: string
@@ -276,10 +277,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           retry_after: data.retry_after
         }
       }
-      if (response.status === 423) {
+      if (response.status === 429) {
         return {
           success: false,
-          error: data.error || data.message || 'Account temporarily locked.',
+          error: data.error || data.message || 'Too many attempts. Please try again later.',
+          retry_after: data.retry_after
+        }
+      }
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: data.error || data.message || 'Invalid phone number or password.',
           retry_after: data.retry_after
         }
       }
@@ -396,10 +404,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         mode: 'cors',
         body: JSON.stringify({
           action: 'send',
-          phone_number: phoneNumber
+          phoneNumber: phoneNumber
         })
       })
       const data = await response.json()
+      setIsLoading(false);
       if (response.ok) {
         return {
           success: true,
@@ -410,6 +419,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           success: false,
           error: data.error || data.message || 'Failed to send verification code'
         }
+        
       }
     } catch (error: any) {
       return {

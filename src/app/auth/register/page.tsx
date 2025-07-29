@@ -8,11 +8,7 @@ function RegisterContent() {
   const { isAuthenticated } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/')
-    }
-  }, [isAuthenticated, router])
+  // Removed useEffect that redirects to '/' if isAuthenticated
 
   const handleSwitchToLogin = () => {
     router.push('/auth/login')

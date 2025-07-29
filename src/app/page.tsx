@@ -137,7 +137,7 @@ function ProtectedContent() {
           }
 
           // Check if phone verification is required
-          if (!userData.phoneVerified || userData.phoneVerificationStatus !== 'VERIFIED') {
+          if (!userData.phoneVerified) {
             console.log('Phone verification required, redirecting...')
             if (mounted) {
               // Instead of redirecting, show verification reminder

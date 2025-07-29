@@ -51,17 +51,11 @@ function ActivateAccountContent() {
   const [successMessage, setSuccessMessage] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
 
-  // Redirect if not authenticated
-//   useEffect(() => {
-//     if (!isAuthenticated) {
-//       router.replace('/auth/login')
-//     }
-//   }, [isAuthenticated, router])
 
   // Redirect if already activated
   useEffect(() => {
     if (userData?.accountStatus === 'ACTIVE') {
-      router.replace('/dashboard')
+      router.replace('/')
     }
   }, [userData?.accountStatus, router])
 
@@ -105,7 +99,7 @@ function ActivateAccountContent() {
 
         // Show success message and redirect after delay
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/')
         }, 3000)
 
       } else {
@@ -122,7 +116,7 @@ function ActivateAccountContent() {
 
   const handleSkipActivation = () => {
     console.log('ℹ️ User skipped activation')
-    router.push('/dashboard')
+    router.push('/')
   }
 
   const handleConfirmActivation = () => {
@@ -166,7 +160,7 @@ function ActivateAccountContent() {
             </div>
             <div className="space-y-3">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/')}
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300"
               >
                 Continue to Dashboard

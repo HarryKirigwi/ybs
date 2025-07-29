@@ -225,10 +225,10 @@ function ProtectedContent() {
     router.replace('/activate-account')
   }
 
-  // Show loading while initializing or while auth context is loading
-  // if (isLoading || isInitializing) {
-  //   return <LoadingSpinner />
-  // }
+ // Show loading while initializing or while auth context is loading
+  if (isLoading || isInitializing) {
+    return <LoadingSpinner />
+  }
 
   // Handle specific error states
   if (authError === 'PHONE_VERIFICATION_REQUIRED') {

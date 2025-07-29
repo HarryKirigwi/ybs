@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '../contexts/AuthContext'
+import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { useUserData } from '../hooks/useUserData'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
@@ -41,7 +41,7 @@ interface ActivationResponse {
   error?: string
 }
 
-export default function ActivateAccount() {
+function ActivateAccountContent() {
   const router = useRouter()
   const { userData, refreshUserData, isAuthenticated } = useAuth()
   const { computedData } = useUserData()
@@ -408,5 +408,13 @@ export default function ActivateAccount() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ActivateAccount() {
+  return (
+    <AuthProvider>
+      <ActivateAccountContent />
+    </AuthProvider>
   )
 }

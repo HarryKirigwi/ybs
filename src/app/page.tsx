@@ -51,7 +51,7 @@ function ProtectedContent() {
 
     const initializeAuth = async () => {
       try {
-        setAuthError(null)
+        await setAuthError(null)
         
         // Wait for the initial auth check to complete
         if (isLoading) {
@@ -90,7 +90,7 @@ function ProtectedContent() {
 
           // User is fully authenticated and verified
           if (mounted) {
-            setIsInitializing(false)
+            await setIsInitializing(false)
           }
           return
         }

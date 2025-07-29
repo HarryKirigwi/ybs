@@ -8,26 +8,39 @@ function apiUrl(path: string) {
   return `${BACKEND_URL}${path}`
 }
 
-// Type definitions to match API responses
+// Updated type definitions to match backend response structure
 interface UserData {
   id: string
-  active_direct_referrals: number
-  totalReferrals: number
-  availableBalance: number
-  createdAt: string
+  phoneNumber: string
   email: string
   fullName: string
-  is_active: boolean
-  userLevel: string
-  pendingEarnings: number
-  phoneNumber: string
-  phone_verified: boolean
+  firstName?: string
+  lastName?: string
+  username?: string
   referralCode: string
+  
+  // Phone verification fields
+  phoneVerified: boolean
+  phoneVerifiedAt?: string
+  phoneVerificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED'
+  
+  // Account status
+  accountStatus: 'UNVERIFIED' | 'ACTIVE' | 'SUSPENDED'
+  userLevel: string
+  isActive: boolean
+  
+  // Financial fields
+  availableBalance: number
+  pendingEarnings: number
   totalEarned: number
   totalWithdrawn: number
-  username: string
-  accountStatus: string
-  last_login?: string
+  totalReferrals: number
+  active_direct_referrals: number
+  
+  // Timestamps
+  createdAt: string
+  lastLogin?: string
+  lastActiveAt?: string
 }
 
 interface ApiResponse<T> {
@@ -37,18 +50,22 @@ interface ApiResponse<T> {
   message?: string
 }
 
-interface LoginApiResponse {
+interface RegisterResponse {
+  success: boolean
   message: string
-  user: {
-    id: string
-    email: string
-    phone: string
-    last_sign_in_at: string
+  data: {
+    user: UserData
   }
-  session: {
-    access_token: string
-    refresh_token: string
-    expires_at: number
+  error?: {
+    message: string
+  }
+}
+
+interface LoginResponse {
+  success: boolean
+  message: string
+  data: {
+    user: UserData
   }
   error?: string
   retry_after?: number
@@ -61,6 +78,41 @@ interface LogoutApiResponse {
     loggedOut: boolean
   }
   error?: string
+}
+
+interface PhoneVerificationResponse {
+  success: boolean
+  message: string
+  data?: {
+    sent: boolean
+    phoneNumber: string
+    code: string // Available for testing
+  }
+  error?: string
+}
+
+interface VerifyPhoneResponse {
+  success: boolean
+  message: string
+  data?: {
+    verified: boolean
+    phoneNumber: string
+  }
+  error?: string
+}
+
+interface ReferralValidationResponse {
+  success: boolean
+  message: string
+  data?: {
+    valid: boolean
+    referrer?: {
+      firstName?: string
+      lastName?: string
+      fullName?: string
+      verified: boolean
+    }
+  }
 }
 
 interface AuthContextType {
@@ -134,12 +186,6 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // --- SECURITY NOTE ---
-  // This app now uses HTTP-only cookies for authentication. Tokens are NOT accessible from JS.
-  // Ensure your backend sets the tokens as Secure, HttpOnly, SameSite=Strict cookies.
-  // For XSS protection, use a strict Content Security Policy (CSP) and sanitize all user input.
-  // For role/permission checks, fetch user roles from /user/me or a similar endpoint.
-
   const [user, setUser] = useState<UserData | null>(null)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -174,7 +220,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  // On mount, check if user is authenticated by calling /user/profile
+  // On mount, check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true)
@@ -187,7 +233,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth()
   }, [])
 
-  // Register user (backend sets cookie)
+  // Register user - Updated to match backend response structure
   const registerUser = async (userData: {
     fullName: string
     email: string
@@ -210,22 +256,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
           referralCode: userData.referralCode || undefined
         })
       })
-      const data = await response.json()
+      
+      const data: RegisterResponse = await response.json()
+      
       if (response.ok && data.success && data.data && data.data.user) {
+        // Set user data from registration response
         setUser(data.data.user)
         setUserData(data.data.user)
+        
+        console.log('✅ Registration successful:', {
+          userId: data.data.user.id,
+          phoneNumber: data.data.user.phoneNumber,
+          phoneVerificationStatus: data.data.user.phoneVerificationStatus
+        })
+        
         return {
           success: true,
           user_id: data.data.user.id,
-          requiresPhoneVerification: true
+          requiresPhoneVerification: !data.data.user.phoneVerified
         }
-      } else if (data.error && data.error.message) {
-        if (data.error.message.includes('Phone number already registered')) {
+      } else {
+        // Handle specific error cases
+        const errorMessage = data.error?.message || data.message || 'Registration failed'
+        
+        if (errorMessage.includes('Phone number already registered')) {
           return {
             success: false,
             error: 'Phone number already registered'
           }
-        } else if (data.error.message.includes('Email address already registered')) {
+        } else if (errorMessage.includes('Email address already registered')) {
           return {
             success: false,
             error: 'Email address already registered'
@@ -233,16 +292,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } else {
           return {
             success: false,
-            error: data.error.message || 'Registration failed. Please try again.'
+            error: errorMessage
           }
-        }
-      } else {
-        return {
-          success: false,
-          error: data.error?.message || data.message || 'Registration failed. Please try again.'
         }
       }
     } catch (error: any) {
+      console.error('Registration error:', error)
       return {
         success: false,
         error: error?.message || 'An unexpected error occurred. Please try again.'
@@ -252,7 +307,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  // Login (backend sets cookie)
+  // Login - Updated to match backend response structure
   const loginWithPhone = async (
     phoneNumber: string,
     password: string
@@ -269,36 +324,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
           password: password,
         }),
       })
-      const data = await response.json()
+      
+      const data: LoginResponse = await response.json()
+      
+      // Handle rate limiting
       if (response.status === 429) {
         return {
           success: false,
-          error: data.error || data.message || 'Too many attempts. Please try again later.',
+          statusCode: 429,
+          error: data.error || 'Too many attempts. Please try again later.',
           retry_after: data.retry_after
         }
       }
-      if (response.status === 429) {
+
+      // Handle account locked
+      if (response.status === 423) {
         return {
           success: false,
-          error: data.error || data.message || 'Too many attempts. Please try again later.',
+          statusCode: 423,
+          error: data.error || 'Account temporarily locked.',
           retry_after: data.retry_after
         }
       }
+
+      // Handle invalid credentials
       if (response.status === 401) {
         return {
           success: false,
-          error: data.error || data.message || 'Invalid phone number or password.',
-          retry_after: data.retry_after
+          statusCode: 401,
+          error: data.error || 'Invalid phone number or password.'
         }
       }
+
       if (response.ok && data.success && data.data && data.data.user) {
         setUser(data.data.user)
         setUserData(data.data.user)
+        
+        console.log('✅ Login successful:', {
+          userId: data.data.user.id,
+          phoneNumber: data.data.user.phoneNumber,
+          accountStatus: data.data.user.accountStatus,
+          phoneVerified: data.data.user.phoneVerified
+        })
+        
         return {
           success: true,
           user_id: data.data.user.id,
           profile: data.data.user,
-          requiresActivation: false
+          requiresActivation: data.data.user.accountStatus !== 'ACTIVE'
         }
       } else {
         return {
@@ -307,6 +380,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error: any) {
+      console.error('Login error:', error)
       return {
         success: false,
         error: error?.message || 'An unexpected error occurred during login.'
@@ -316,50 +390,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  // Fixed logout function that properly waits for API response
-  const signOut = async (): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true)
+  // Phone verification - Send code
+  const sendVerificationCode = async (phoneNumber: string) => {
     try {
-      const response = await fetch(apiUrl('/auth/logout'), {
+      const response = await fetch(apiUrl('/auth/verify-phone'), {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         mode: 'cors',
+        body: JSON.stringify({
+          action: 'send',
+          phoneNumber: phoneNumber
+        })
       })
-
-      // Parse the response
-      const data: LogoutApiResponse = await response.json()
       
-      if (response.ok && data.success && data.data?.loggedOut === true) {
-        // Only clear local state after successful logout from backend
-        setUser(null)
-        setUserData(null)
+      const data: PhoneVerificationResponse = await response.json()
+      
+      if (response.ok && data.success && data.data?.sent) {
+        console.log('📱 Verification code sent to:', data.data.phoneNumber)
+        
+        // In development, log the code for testing
+        if (data.data.code && process.env.NODE_ENV === 'development') {
+          console.log('🔢 Verification code:', data.data.code)
+        }
+        
         return {
-          success: true
+          success: true,
+          code: data.data.code // Available for testing
         }
       } else {
-        // Backend logout failed, but still clear local state as fallback
-        console.error('Logout API failed:', data.error || data.message)
-        setUser(null)
-        setUserData(null)
         return {
           success: false,
-          error: data.error || data.message || 'Logout failed on server, but cleared local session'
+          error: data.error || data.message || 'Failed to send verification code'
         }
       }
     } catch (error: any) {
-      console.error('Logout request failed:', error)
-      // Network error - still clear local state as fallback
-      setUser(null)
-      setUserData(null)
+      console.error('Send verification code error:', error)
       return {
         success: false,
-        error: error?.message || 'Network error during logout, but cleared local session'
+        error: error?.message || 'Failed to send verification code'
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 
+  // Phone verification - Verify code
   const verifyPhone = async (phoneNumber: string, code: string) => {
     setIsLoading(true)
     try {
@@ -374,10 +448,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           verificationCode: code
         })
       })
-      const data = await response.json()
-      if (response.ok) {
-        // After successful phone verification, refresh user data
+      
+      const data: VerifyPhoneResponse = await response.json()
+      
+      if (response.ok && data.success && data.data?.verified) {
+        console.log('✅ Phone verification successful for:', data.data.phoneNumber)
+        
+        // Refresh user data to get updated verification status
         await checkAuthStatus()
+        
         return { success: true }
       } else {
         return {
@@ -386,6 +465,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error: any) {
+      console.error('Phone verification error:', error)
       return {
         success: false,
         error: error?.message || 'Verification failed. Please try again.'
@@ -395,40 +475,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const sendVerificationCode = async (phoneNumber: string) => {
-    try {
-      const response = await fetch(apiUrl('/auth/verify-phone'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        mode: 'cors',
-        body: JSON.stringify({
-          action: 'send',
-          phoneNumber: phoneNumber
-        })
-      })
-      const data = await response.json()
-      setIsLoading(false);
-      if (response.ok) {
-        return {
-          success: true,
-          code: data.code
-        }
-      } else {
-        return {
-          success: false,
-          error: data.error || data.message || 'Failed to send verification code'
-        }
-        
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error?.message || 'Failed to send verification code'
-      }
-    }
-  }
-
+  // Validate referral code
   const validateReferralCode = async (code: string) => {
     if (!code || code.length < 6) {
       return {
@@ -436,6 +483,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         message: 'Referral code must be at least 6 characters'
       }
     }
+    
     try {
       const response = await fetch(apiUrl(`/referral/verify/${code}`), {
         method: 'GET',
@@ -443,13 +491,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         credentials: 'include',
         mode: 'cors',
       })
-      const data = await response.json()
+      
+      const data: ReferralValidationResponse = await response.json()
+      
       if (response.ok && data.success && data.data && data.data.valid) {
         const referrer = data.data.referrer
+        const referrerName = referrer ? 
+          (referrer.firstName ? `${referrer.firstName} ${referrer.lastName || ''}`.trim() : referrer.fullName) : 
+          'Unknown User'
+        
         return {
           valid: true,
-          referrerName: referrer ? `${referrer.firstName || ''} ${referrer.lastName || ''}`.trim() : undefined,
-          message: data.message || `Valid referral code${referrer ? ` from ${referrer.firstName}` : ''}`
+          referrerName,
+          message: data.message || `Valid referral code${referrer ? ` from ${referrerName}` : ''}`
         }
       } else {
         return {
@@ -458,6 +512,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error) {
+      console.error('Referral validation error:', error)
       return {
         valid: false,
         message: 'Unable to validate referral code'
@@ -465,14 +520,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  // Logout function
+  const signOut = async (): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(apiUrl('/auth/logout'), {
+        method: 'POST',
+        credentials: 'include',
+        mode: 'cors',
+      })
+
+      const data: LogoutApiResponse = await response.json()
+      
+      if (response.ok && data.success && data.data?.loggedOut === true) {
+        setUser(null)
+        setUserData(null)
+        console.log('✅ Logout successful')
+        return { success: true }
+      } else {
+        console.error('Logout API failed:', data.error || data.message)
+        setUser(null)
+        setUserData(null)
+        return {
+          success: false,
+          error: data.error || data.message || 'Logout failed on server, but cleared local session'
+        }
+      }
+    } catch (error: any) {
+      console.error('Logout request failed:', error)
+      setUser(null)
+      setUserData(null)
+      return {
+        success: false,
+        error: error?.message || 'Network error during logout, but cleared local session'
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Forgot password placeholder
   const forgotPassword = async (email: string) => {
-    // Not implemented in backend, placeholder
     return {
       success: false,
       error: 'Forgot password not implemented.'
     }
   }
 
+  // Refresh user data
   const refreshUserData = async (): Promise<{ success: boolean; error?: string; data?: UserData }> => {
     if (!user) {
       return {
@@ -480,6 +575,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error: 'No active session'
       }
     }
+    
     try {
       const response = await fetch(apiUrl('/user/profile'), { 
         method: 'GET', 
@@ -507,6 +603,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     } catch (error: any) {
+      console.error('Refresh user data error:', error)
       return {
         success: false,
         error: error?.message || 'Failed to refresh user data'

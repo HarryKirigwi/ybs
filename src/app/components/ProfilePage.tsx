@@ -38,10 +38,12 @@ import {
 import { useState, useEffect } from 'react'
 import { useUserData } from '../hooks/useUserData'
 import { useAuth } from '../contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function ProfilePage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
   const { signOut, refreshUserData: authRefreshUserData } = useAuth()
+
   
   const [isEditing, setIsEditing] = useState(false)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
@@ -215,15 +217,24 @@ export default function ProfilePage() {
     setTempUserData({})
   }
 
-  const handleLogout = async () => {
-    if (confirm('Are you sure you want to logout?')) {
-      try {
-        await signOut()
-      } catch (error: any) {
-        alert('Error logging out: ' + (error?.message || 'Unknown error'))
-      }
-    }
-  }
+  // const handleLogout = async () => {
+  //   if (confirm('Are you sure you want to logout?')) {
+  //     try {
+  //       await signOut()
+  //     } catch (error: any) {
+  //       alert('Error logging out: ' + (error?.message || 'Unknown error'))
+  //     }
+  //   }
+  // }
+
+
+
+const router = useRouter();
+
+const handleLogout = async () => {
+  await signOut();
+  router.push('/auth/login');
+}
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section)

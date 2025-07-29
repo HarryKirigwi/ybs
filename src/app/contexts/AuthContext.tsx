@@ -54,6 +54,15 @@ interface LoginApiResponse {
   retry_after?: number
 }
 
+interface LogoutApiResponse {
+  success: boolean
+  message: string
+  data: {
+    loggedOut: boolean
+  }
+  error?: string
+}
+
 interface AuthContextType {
   user: UserData | null
   accessToken: string | null
@@ -114,7 +123,7 @@ interface AuthContextType {
 
   refreshUserData: () => Promise<{ success: boolean; error?: string; data?: UserData }>
   checkAuthStatus: () => Promise<boolean>
-  signOut: () => Promise<void>
+  signOut: () => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -134,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userData, setUserData] = useState<UserData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check authentication status by calling /auth/me
+  // Check authentication status by calling /user/profile
   const checkAuthStatus = async (): Promise<boolean> => {
     try {
       const response = await fetch(apiUrl('/user/profile'), {
@@ -164,7 +173,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  // On mount, check if user is authenticated by calling /auth/me
+  // On mount, check if user is authenticated by calling /user/profile
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true)
@@ -299,19 +308,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  // Logout (backend clears cookie)
-  const signOut = async () => {
+  // Fixed logout function that properly waits for API response
+  const signOut = async (): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true)
     try {
-      await fetch(apiUrl('/auth/logout'), {
+      const response = await fetch(apiUrl('/auth/logout'), {
         method: 'POST',
         credentials: 'include',
         mode: 'cors',
       })
-    } catch {}
-    setUser(null)
-    setUserData(null)
-    setIsLoading(false)
+
+      // Parse the response
+      const data: LogoutApiResponse = await response.json()
+      
+      if (response.ok && data.success && data.data?.loggedOut === true) {
+        // Only clear local state after successful logout from backend
+        setUser(null)
+        setUserData(null)
+        return {
+          success: true
+        }
+      } else {
+        // Backend logout failed, but still clear local state as fallback
+        console.error('Logout API failed:', data.error || data.message)
+        setUser(null)
+        setUserData(null)
+        return {
+          success: false,
+          error: data.error || data.message || 'Logout failed on server, but cleared local session'
+        }
+      }
+    } catch (error: any) {
+      console.error('Logout request failed:', error)
+      // Network error - still clear local state as fallback
+      setUser(null)
+      setUserData(null)
+      return {
+        success: false,
+        error: error?.message || 'Network error during logout, but cleared local session'
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const verifyPhone = async (phoneNumber: string, code: string) => {
@@ -433,7 +471,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
     try {
-      const response = await fetch(apiUrl('/auth/me'), { method: 'GET', credentials: 'include', mode: 'cors' })
+      const response = await fetch(apiUrl('/user/profile'), { 
+        method: 'GET', 
+        credentials: 'include', 
+        mode: 'cors' 
+      })
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         return {
@@ -441,6 +484,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           error: errorData.error || 'Failed to fetch updated profile'
         }
       }
+      
       const profileData: ApiResponse<UserData> = await response.json()
       if (profileData.success && profileData.data) {
         setUserData(profileData.data)

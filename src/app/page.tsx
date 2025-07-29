@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { UserProvider } from './contexts/UserContext'
 import AppContent from './components/AppContent'
@@ -68,6 +68,7 @@ function PhoneVerificationReminder({ onRetry }: { onRetry: () => void }) {
 function ProtectedContent() {
   const { isAuthenticated, isLoading, user, userData, checkAuthStatus } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const [authError, setAuthError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false)
@@ -94,7 +95,8 @@ function ProtectedContent() {
             accountStatus: userData.accountStatus,
             phoneVerified: userData.phoneVerified,
             phoneVerificationStatus: userData.phoneVerificationStatus,
-            isActive: userData.isActive
+            isActive: userData.isActive,
+            currentPath: pathname
           })
 
           // Check for suspended account
@@ -118,8 +120,8 @@ function ProtectedContent() {
           if (userData.accountStatus === 'UNVERIFIED') {
             console.log('💳 Account activation required, checking current path...')
             
-            // Check if we're already on the activate-account page to prevent loops
-            if (typeof window !== 'undefined' && window.location.pathname === '/activate-account') {
+            // FIXED: Check if we're already on the activate-account page to prevent loops
+            if (pathname === '/activate-account') {
               console.log('📍 Already on activate-account page, allowing access')
               if (mounted) {
                 setIsInitializing(false)
@@ -127,11 +129,22 @@ function ProtectedContent() {
               return
             }
             
-            console.log('🔄 Redirecting to activate-account page...')
-            if (mounted) {
-              router.replace('/activate-account')
+            // FIXED: Check if we're on the main dashboard route before redirecting
+            if (pathname === '/' || pathname === '/dashboard') {
+              console.log('🔄 Redirecting to activate-account page...')
+              if (mounted) {
+                router.replace('/activate-account')
+              }
+              return
+            } else {
+              // FIXED: If we're on any other route and account is unverified, 
+              // allow access but user will see limited functionality
+              console.log('📍 On other route with unverified account, allowing limited access')
+              if (mounted) {
+                setIsInitializing(false)
+              }
+              return
             }
-            return
           }
 
           // User is fully authenticated, verified, and active
@@ -183,7 +196,7 @@ function ProtectedContent() {
     return () => {
       mounted = false
     }
-  }, [isAuthenticated, isLoading, user, userData, router, checkAuthStatus, hasCheckedAuth])
+  }, [isAuthenticated, isLoading, user, userData, router, checkAuthStatus, hasCheckedAuth, pathname])
 
   // Handle auth error retry
   const handleRetry = async () => {
@@ -238,14 +251,14 @@ function ProtectedContent() {
     return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
   }
 
-  // Check account status - allow UNVERIFIED users to proceed to dashboard
-  // (they can activate later via the activate-account page)
+  // FIXED: Allow users with UNVERIFIED status to access the app
+  // They can activate later, but shouldn't be blocked from using basic features
   if (userData.accountStatus === 'SUSPENDED') {
     return <AuthError error="Your account has been suspended. Please contact support." onRetry={handleRetry} />
   }
 
   // User is authenticated and phone verified - show the main app content
-  // (regardless of account status - UNVERIFIED users can still access dashboard)
+  // (regardless of account status - UNVERIFIED users can still access dashboard with limitations)
   console.log('🎉 All checks passed, showing main app content')
   return <AppContent />
 }

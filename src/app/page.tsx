@@ -152,7 +152,9 @@ function ProtectedContent() {
             if (mounted) {
               setAuthError('ACCOUNT_ACTIVATION_REQUIRED')
             }
-            return
+            // Instead of redirecting, show activation reminder
+            router.replace('/activate-account');
+            
           }
 
           // User is fully authenticated, verified, and active

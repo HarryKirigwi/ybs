@@ -196,9 +196,11 @@ export default function WalletPage() {
   const getTransactionInfo = (transaction: Transaction) => {
     const amount = parseFloat(transaction.amount)
     const isWithdrawal = transaction.type.includes('WITHDRAW') || amount < 0
+    const isActivation = transaction.type.includes('ACTIVATION')
     
     let icon = ArrowUpRight
     let type = 'earning'
+    let isNegative = isWithdrawal || isActivation
     
     if (isWithdrawal) {
       icon = ArrowDownLeft
@@ -206,12 +208,12 @@ export default function WalletPage() {
     } else if (transaction.type.includes('REFERRAL')) {
       icon = TrendingUp
       type = 'referral'
-    } else if (transaction.type.includes('ACTIVATION')) {
+    } else if (isActivation) {
       icon = CreditCard
       type = 'activation'
     }
 
-    return { icon, type, isWithdrawal }
+    return { icon, type, isWithdrawal: isNegative }
   }
 
   const StatCard = ({ title, value, subtitle, icon: Icon, color }: any) => (

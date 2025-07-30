@@ -243,9 +243,7 @@ function ActivateAccountContent() {
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8">
-          <div className="bg-gradient-to-r from-green-600 to-green-700 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Star className="w-8 h-8 text-white" />
-          </div>
+          
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Activate Your Account</h1>
           <p className="text-slate-600">Unlock the full YBS earning potential</p>
         </div>

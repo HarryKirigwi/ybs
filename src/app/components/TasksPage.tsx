@@ -1,7 +1,8 @@
 // app/components/TasksPage.tsx
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, Clock, Target, Users, TrendingUp, Calendar, Share2, Play, UserPlus } from 'lucide-react'
+import { CheckCircle, Clock, Target, Users, TrendingUp, Calendar, Share2, Play, UserPlus, Award } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 interface Task {
   id: string
@@ -27,12 +28,39 @@ interface DailyTasksResponse {
   }
 }
 
+interface WeeklyChallenge {
+  id: string
+  name: string
+  description: string
+  target: number
+  current: number
+  completed: boolean
+  reward: number
+  rewardClaimed: boolean
+  progressPercentage: number
+}
+
+interface WeeklyTasksResponse {
+  success: boolean
+  message: string
+  data: {
+    challenges: WeeklyChallenge[]
+    weekPeriod: {
+      start: string
+      end: string
+    }
+    totalRewardEarned: number
+  }
+}
+
 interface TasksPageProps {
   setActiveTab: (tab: string) => void
 }
 
 export default function TasksPage({ setActiveTab }: TasksPageProps) {
+  const { isAuthenticated } = useAuth()
   const [dailyTasks, setDailyTasks] = useState<Task[]>([])
+  const [weeklyChallenges, setWeeklyChallenges] = useState<WeeklyChallenge[]>([])
   const [summary, setSummary] = useState<TaskSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,10 +74,9 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
 
   // Fetch daily tasks
   const fetchDailyTasks = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+    if (!isAuthenticated) return
 
+    try {
       const response = await fetch(apiUrl('/tasks/daily'), {
         method: 'GET',
         credentials: 'include',
@@ -71,17 +98,56 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
     } catch (err: any) {
       setError(err.message || 'Network error occurred')
       console.error('Error fetching daily tasks:', err)
-    } finally {
-      setLoading(false)
+    }
+  }
+
+  // Fetch weekly challenges
+  const fetchWeeklyChallenges = async () => {
+    if (!isAuthenticated) return
+
+    try {
+      const response = await fetch(apiUrl('/tasks/weekly'), {
+        method: 'GET',
+        credentials: 'include',
+        mode: 'cors',
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: WeeklyTasksResponse = await response.json()
+
+      if (result.success && result.data) {
+        setWeeklyChallenges(result.data.challenges)
+      } else {
+        setError(result.message || 'Failed to fetch weekly challenges')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Network error occurred')
+      console.error('Error fetching weekly challenges:', err)
     }
   }
 
   // Load tasks on component mount
   useEffect(() => {
-    fetchDailyTasks()
-  }, [])
+    const fetchTasks = async () => {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        await Promise.all([fetchDailyTasks(), fetchWeeklyChallenges()])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  // Get icon for task
+    if (isAuthenticated) {
+      fetchTasks()
+    }
+  }, [isAuthenticated])
+
+  // Get icon for daily task
   const getTaskIcon = (taskId: string) => {
     switch (taskId) {
       case 'shareReferral':
@@ -97,9 +163,29 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
     }
   }
 
+  // Get icon for weekly challenge
+  const getWeeklyChallengeIcon = (challengeId: string) => {
+    switch (challengeId) {
+      case 'refer5Members':
+        return Users
+      case 'complete10Tasks':
+        return CheckCircle
+      case 'promote3Products':
+        return TrendingUp
+      default:
+        return Award
+    }
+  }
+
   // Handle task button click - navigate to dashboard
   const handleTaskClick = (taskId: string) => {
     // Navigate to dashboard where users can complete these tasks
+    setActiveTab('home')
+  }
+
+  // Handle weekly challenge click - navigate to dashboard
+  const handleWeeklyChallengeClick = (challengeId: string) => {
+    // Navigate to dashboard where users can complete these challenges
     setActiveTab('home')
   }
 
@@ -139,12 +225,65 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
     )
   }
 
+  const WeeklyChallengeCard = ({ challenge }: { challenge: WeeklyChallenge }) => {
+    const Icon = getWeeklyChallengeIcon(challenge.id)
+    
+    return (
+      <div className="bg-white rounded-xl p-4 border border-slate-200">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3">
+            <div className={`p-2 rounded-lg ${
+              challenge.completed ? 'bg-green-100' : 'bg-purple-100'
+            }`}>
+              <Icon className={`w-5 h-5 ${
+                challenge.completed ? 'text-green-600' : 'text-purple-600'
+              }`} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-slate-800">{challenge.name}</h3>
+              <p className="text-sm text-slate-600 mt-1">{challenge.description}</p>
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-sm text-slate-600 mb-1">
+                  <span>Progress</span>
+                  <span>{challenge.progressPercentage}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      challenge.completed ? 'bg-green-600' : 'bg-purple-600'
+                    }`}
+                    style={{ width: `${challenge.progressPercentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {challenge.current}/{challenge.target} completed
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            {challenge.completed ? (
+              <span className="text-xs text-green-600 font-medium">Completed</span>
+            ) : (
+              <button 
+                onClick={() => handleWeeklyChallengeClick(challenge.id)}
+                className="text-xs text-purple-600 font-medium hover:underline"
+              >
+                Start Challenge
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="p-4 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading daily tasks...</p>
+          <p className="text-slate-600">Loading tasks...</p>
         </div>
       </div>
     )
@@ -156,7 +295,10 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button 
-            onClick={fetchDailyTasks}
+            onClick={() => {
+              setLoading(true)
+              Promise.all([fetchDailyTasks(), fetchWeeklyChallenges()]).finally(() => setLoading(false))
+            }}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -165,6 +307,10 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
       </div>
     )
   }
+
+  // Separate completed and active challenges
+  const activeChallenges = weeklyChallenges.filter(challenge => !challenge.completed)
+  const completedChallenges = weeklyChallenges.filter(challenge => challenge.completed)
 
   return (
     <div className="p-4 space-y-6">
@@ -209,6 +355,30 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
         )}
       </div>
 
+      {/* Weekly Challenges */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-slate-800">Weekly Challenges</h2>
+        {activeChallenges.length > 0 ? (
+          activeChallenges.map((challenge) => (
+            <WeeklyChallengeCard key={challenge.id} challenge={challenge} />
+          ))
+        ) : (
+          <div className="bg-white rounded-xl p-6 border border-slate-200 text-center">
+            <p className="text-slate-600">No active weekly challenges at the moment.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Completed Weekly Challenges */}
+      {completedChallenges.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-slate-800">Recently Completed</h2>
+          {completedChallenges.map((challenge) => (
+            <WeeklyChallengeCard key={challenge.id} challenge={challenge} />
+          ))}
+        </div>
+      )}
+
       {/* Info Section */}
       <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
         <h3 className="text-sm font-semibold text-blue-800 mb-2">How to Complete Tasks</h3>
@@ -217,6 +387,7 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
           <p>• <strong>Daily Login:</strong> Automatically completed when you log in</p>
           <p>• <strong>Watch Videos:</strong> Visit the Dashboard to watch promotional videos</p>
           <p>• <strong>Invite Members:</strong> Share your referral code to invite new members</p>
+          <p>• <strong>Weekly Challenges:</strong> Complete daily tasks and refer members to earn weekly rewards</p>
         </div>
       </div>
     </div>

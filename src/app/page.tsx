@@ -208,7 +208,7 @@ function ProtectedContent() {
   // Show general auth error if present
   if (authError) {
     return <AuthError error={authError} onRetry={handleRetry} />
-  }
+  } 
 
   // Final validation: ensure user is authenticated and has valid data
   if (!isAuthenticated || !user || !userData) {

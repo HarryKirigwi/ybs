@@ -666,32 +666,6 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
           </form>
         </div>
 
-        {/* Features Section */}
-        <div className="mt-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">Start Earning After Activation</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Gift className="w-6 h-6 text-green-600" />
-              </div>
-              <p className="text-sm font-medium text-slate-700">KSH 300</p>
-              <p className="text-xs text-slate-600">Level 1 Referral</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Zap className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-sm font-medium text-slate-700">KSH 600</p>
-              <p className="text-xs text-slate-600">Activation Fee</p>
-            </div>
-          </div>
-          <div className="mt-4 text-center">
-            <p className="text-xs text-slate-600">
-              Multi-level rewards: KSH 300 (Level 1) + KSH 100 (Level 2) + KSH 50 (Level 3)
-            </p>
-          </div>
-        </div>
-
         {/* Sign In Link */}
         <div className="text-center mt-8 pb-8">
           <p className="text-slate-600 text-sm">

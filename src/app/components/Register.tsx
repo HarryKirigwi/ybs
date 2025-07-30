@@ -340,11 +340,11 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Smartphone className="w-8 h-8 text-white" />
-          </div>
+          {/* <div className="bg-gradient-to-r from-blue-600 to-blue-700 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">*/}
+            {/* <Smartphone className="w-8 h-8 text-white" /> */}
+          {/* </div>  */}
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Join YBS Today!</h1>
-          <p className="text-slate-600">Start earning money with our referral system</p>
+          <p className="text-slate-600">Start earning money by marketing products</p>
         </div>
 
         {/* Welcome Bonus Banner */}

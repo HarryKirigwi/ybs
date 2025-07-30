@@ -70,7 +70,7 @@ function ActivateAccountContent() {
     setSuccessMessage('')
 
     try {
-      const response = await fetch(apiUrl('/mpesa/activate'), {
+      const response = await fetch(apiUrl('/user/activate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

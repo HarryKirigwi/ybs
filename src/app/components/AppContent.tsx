@@ -17,7 +17,7 @@ export default function AppContent() {
       case 'home':
         return <Dashboard />
       case 'tasks':
-        return <TasksPage />
+        return <TasksPage setActiveTab={setActiveTab} />
       case 'wallet':
         return <WalletPage />
       case 'profile':

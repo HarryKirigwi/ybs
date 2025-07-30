@@ -20,7 +20,6 @@ export const useAutoLogout = (config: Partial<AutoLogoutConfig> = {}) => {
   const { isAuthenticated } = useAuth()
   const { logout } = useLogout()
   
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [showWarning, setShowWarning] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   
@@ -38,7 +37,6 @@ export const useAutoLogout = (config: Partial<AutoLogoutConfig> = {}) => {
     console.log('🔄 User activity detected, resetting auto-logout timer')
     lastActivityRef.current = Date.now()
     setShowWarning(false)
-    setTimeRemaining(null)
     
     // Clear existing timeouts
     if (timeoutRef.current) {
@@ -216,11 +214,6 @@ export const useAutoLogout = (config: Partial<AutoLogoutConfig> = {}) => {
     const timeUntilWarning = timeoutMs - warningMs - timeSinceLastActivity
     const timeUntilLogout = timeoutMs - timeSinceLastActivity
     
-    // Update time remaining for UI
-    if (timeUntilLogout > 0) {
-      setTimeRemaining(Math.ceil(timeUntilLogout / 1000))
-    }
-    
     // Show warning if approaching timeout
     if (timeUntilWarning <= 0 && !showWarning && timeUntilLogout > 0) {
       showWarningToUser()
@@ -237,7 +230,6 @@ export const useAutoLogout = (config: Partial<AutoLogoutConfig> = {}) => {
     if (!isAuthenticated) {
       // Clean up if user is not authenticated
       setShowWarning(false)
-      setTimeRemaining(null)
       return
     }
 
@@ -302,7 +294,6 @@ export const useAutoLogout = (config: Partial<AutoLogoutConfig> = {}) => {
   }, [resetActivity])
 
   return {
-    timeRemaining,
     showWarning,
     isLoggingOut,
     manualLogout,

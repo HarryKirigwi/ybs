@@ -11,7 +11,6 @@ export default function AutoLogoutWrapper({ children }: AutoLogoutWrapperProps) 
   
   // Initialize auto-logout hook
   const {
-    timeRemaining,
     showWarning,
     isLoggingOut,
     manualLogout,
@@ -29,13 +28,6 @@ export default function AutoLogoutWrapper({ children }: AutoLogoutWrapperProps) 
 
   return (
     <>
-      {/* Session Status Indicator (optional - for debugging) */}
-      {process.env.NODE_ENV === 'development' && timeRemaining && (
-        <div className="fixed bottom-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-xs z-50">
-          Session: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
-        </div>
-      )}
-      
       {/* Main content */}
       {children}
     </>

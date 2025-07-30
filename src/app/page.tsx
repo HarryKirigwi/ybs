@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { UserProvider } from './contexts/UserContext'
 import AppContent from './components/AppContent'
+import AutoLogoutWrapper from './components/AutoLogoutWrapper'
 
 // Loading component
 function LoadingSpinner() {
@@ -294,7 +295,9 @@ export default function HomePage() {
     <AppErrorBoundary>
       <UserProvider>
         <AuthProvider>
-          <ProtectedContent />
+          <AutoLogoutWrapper>
+            <ProtectedContent />
+          </AutoLogoutWrapper>
         </AuthProvider>
       </UserProvider>
     </AppErrorBoundary>

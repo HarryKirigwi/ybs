@@ -7,6 +7,7 @@ import Dashboard from './Dashboard'
 import TasksPage from './TasksPage'
 import WalletPage from './WalletPage'
 import ProfilePage from './ProfilePage'
+import SessionStatus from './SessionStatus'
 
 // Main App Content - only shows when authenticated
 export default function AppContent() {
@@ -34,6 +35,7 @@ export default function AppContent() {
         {renderContent()}
       </main>
       <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <SessionStatus />
     </div>
   )
 }

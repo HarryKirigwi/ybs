@@ -407,31 +407,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
           </form>
         </div>
 
-        {/* Benefits Section */}
-        <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">Your Earning Opportunities</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-              </div>
-              <p className="text-sm font-medium text-slate-700">KSH 300</p>
-              <p className="text-xs text-slate-600">Level 1 Referral</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Shield className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-sm font-medium text-slate-700">Secure</p>
-              <p className="text-xs text-slate-600">Payments</p>
-            </div>
-          </div>
-          <div className="mt-4 text-center">
-            <p className="text-xs text-slate-600">
-              Multi-level rewards: Level 1 (KSH 300) • Level 2 (KSH 100) • Level 3 (KSH 50)
-            </p>
-          </div>
-        </div>
+        
 
         {/* Sign Up Link */}
         <div className="text-center mt-8 pb-8">

@@ -709,11 +709,18 @@ export default function WalletPage() {
             </div>
           )}
         </div>
-        <div className="p-4 text-center">
-          <button className="text-blue-600 text-sm font-medium hover:underline disabled:text-slate-400 disabled:no-underline" disabled>
-            View All Transactions (Coming Soon)
-          </button>
-        </div>
+                 <div className="p-4 text-center">
+           <button 
+             onClick={() => {
+               // For now, we'll show a simple alert since we don't have pagination implemented
+               // In the future, this could open a modal or navigate to a dedicated transactions page
+               alert('View All Transactions feature will be implemented soon! This will show all transactions with pagination.')
+             }}
+             className="text-blue-600 text-sm font-medium hover:underline transition-colors"
+           >
+             View All Transactions
+           </button>
+         </div>
       </div>
 
       {/* Transfer Popup */}

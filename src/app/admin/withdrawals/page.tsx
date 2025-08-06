@@ -84,7 +84,7 @@ export default function AdminWithdrawalsPage() {
         params.append('status', statusFilter)
       }
 
-      const response = await fetch(apiUrl(`/api/admin/withdrawals?${params}`), {
+      const response = await fetch(apiUrl(`/admin/withdrawals?${params}`), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',
@@ -133,7 +133,7 @@ export default function AdminWithdrawalsPage() {
     setProcessingId(withdrawalId)
 
     try {
-      const response = await fetch(apiUrl(`/api/admin/withdrawals/${withdrawalId}`), {
+      const response = await fetch(apiUrl(`/admin/withdrawals/${withdrawalId}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

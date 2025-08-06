@@ -91,7 +91,7 @@ export default function AdminAnalyticsPage() {
 
     try {
       setError(null)
-      const response = await fetch(apiUrl('/api/admin/analytics'), {
+      const response = await fetch(apiUrl('/admin/analytics'), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',

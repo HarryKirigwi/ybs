@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
         params.append('status', statusFilter)
       }
 
-      const response = await fetch(apiUrl(`/api/admin/users?${params}`), {
+      const response = await fetch(apiUrl(`/admin/users?${params}`), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',

@@ -79,7 +79,7 @@ export default function AdminSystemStatsPage() {
 
     try {
       setError(null)
-      const response = await fetch(apiUrl('/api/admin/system-stats'), {
+      const response = await fetch(apiUrl('/admin/system-stats'), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',

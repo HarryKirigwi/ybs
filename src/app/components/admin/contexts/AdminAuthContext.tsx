@@ -61,7 +61,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
 
   const checkAdminAuthStatus = async (): Promise<boolean> => {
     try {
-      const response = await fetch(apiUrl('/api/admin/auth/verify'), {
+      const response = await fetch(apiUrl('/admin/auth/verify'), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',

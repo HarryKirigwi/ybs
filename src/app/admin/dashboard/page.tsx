@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
 
     try {
       setError(null)
-      const response = await fetch(apiUrl('/api/admin/dashboard'), {
+      const response = await fetch(apiUrl('/admin/dashboard'), {
         method: 'GET',
         credentials: 'include',
         mode: 'cors',

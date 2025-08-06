@@ -1,5 +1,6 @@
 // app/layout.tsx
 import './globals.css' // Make sure you have Tailwind CSS configured
+import { AdminAuthProvider } from './components/admin/contexts/AdminAuthContext'
 
 export const metadata = {
   title: 'YBS - Your Business Success',
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <AdminAuthProvider>
+          {children}
+        </AdminAuthProvider>
       </body>
     </html>
   )

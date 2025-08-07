@@ -53,6 +53,12 @@ const navigationItems = [
     href: '/admin/system-stats'
   },
   {
+    id: 'test',
+    name: 'Test',
+    icon: Shield,
+    href: '/admin/test'
+  },
+  {
     id: 'settings',
     name: 'Settings',
     icon: Settings,

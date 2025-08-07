@@ -14,9 +14,8 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
+
 };
 
 export default nextConfig;

@@ -1,6 +1,12 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { apiGet, apiPost, ApiResponse } from '@/lib/api'
+
+// API utility function - same pattern as other components
+const apiUrl = (path: string) => {
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+  if (path.startsWith('http')) return path
+  return `${BACKEND_URL}${path}`
+}
 
 // Admin user interface
 interface AdminUser {
@@ -56,24 +62,36 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
   const checkAdminAuthStatus = async (): Promise<boolean> => {
     try {
       console.log('🔍 Checking admin authentication status...')
+      console.log('Current domain:', typeof window !== 'undefined' ? window.location.origin : 'server')
+      console.log('Current protocol:', typeof window !== 'undefined' ? window.location.protocol : 'server')
+      console.log('Available cookies:', typeof window !== 'undefined' ? document.cookie : 'server')
       
-      const data = await apiGet<{ admin: AdminUser }>('/admin/auth/verify')
+      const response = await fetch(apiUrl('/admin/auth/verify'), {
+        method: 'GET',
+        credentials: 'include',
+        mode: 'cors',
+      })
 
-      if (data.success && data.data?.admin) {
-        console.log('✅ Admin authentication successful:', {
-          adminId: data.data.admin.id,
-          email: data.data.admin.email,
-          role: data.data.admin.role
-        })
-        setAdmin(data.data.admin)
-        setIsAuthenticated(true)
-        return true
+      console.log('Auth check response status:', response.status)
+      console.log('Auth check response headers:', Object.fromEntries(response.headers.entries()))
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data?.admin) {
+          console.log('✅ Admin authentication successful:', {
+            adminId: data.data.admin.id,
+            email: data.data.admin.email,
+            role: data.data.admin.role
+          })
+          setAdmin(data.data.admin)
+          setIsAuthenticated(true)
+          return true
+        }
       }
       
       console.log('❌ Admin authentication failed:', {
-        success: data.success,
-        error: data.error,
-        message: data.message
+        status: response.status,
+        statusText: response.statusText
       })
       
       setAdmin(null)
@@ -94,12 +112,19 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
 
       console.log('🔐 Attempting admin login for:', email)
 
-      const data = await apiPost<{ admin: AdminUser; accessToken: string }>('/auth/admin/login', {
-        email,
-        password,
+      const response = await fetch(apiUrl('/auth/admin/login'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        mode: 'cors',
+        body: JSON.stringify({ email, password }),
       })
 
-      if (data.success && data.data) {
+      const data = await response.json()
+
+      if (response.ok && data.success && data.data) {
         console.log('✅ Admin login successful:', {
           adminId: data.data.admin.id,
           email: data.data.admin.email,
@@ -128,17 +153,24 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
     try {
       console.log('🚪 Attempting admin logout...')
 
-      const data = await apiPost('/auth/admin/logout')
+      const response = await fetch(apiUrl('/auth/admin/logout'), {
+        method: 'POST',
+        credentials: 'include',
+        mode: 'cors',
+      })
 
-      if (data.success) {
-        console.log('✅ Admin logout successful')
-        setAdmin(null)
-        setIsAuthenticated(false)
-        return { success: true }
-      } else {
-        console.log('❌ Admin logout failed:', data.error)
-        return { success: false, error: data.error || 'Logout failed' }
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          console.log('✅ Admin logout successful')
+          setAdmin(null)
+          setIsAuthenticated(false)
+          return { success: true }
+        }
       }
+      
+      console.log('❌ Admin logout failed')
+      return { success: false, error: 'Logout failed' }
     } catch (err: any) {
       console.error('❌ Admin logout error:', err)
       return { success: false, error: err.message || 'Network error' }

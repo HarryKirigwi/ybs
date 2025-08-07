@@ -15,7 +15,12 @@ import AdminProtectedRoute from '../../components/admin/AdminProtectedRoute'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { useAdminAuth } from '../../components/admin/contexts/AdminAuthContext'
 
-import { apiGet } from '@/lib/api'
+// API utility function - same pattern as other components
+const apiUrl = (path: string) => {
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+  if (path.startsWith('http')) return path
+  return `${BACKEND_URL}${path}`
+}
 
 // Types for dashboard data
 interface DashboardStats {
@@ -81,7 +86,17 @@ export default function AdminDashboardPage() {
       setError(null)
       console.log('📊 Fetching dashboard data...')
 
-      const data = await apiGet<DashboardData>('/admin/dashboard')
+      const response = await fetch(apiUrl('/admin/dashboard'), {
+        method: 'GET',
+        credentials: 'include',
+        mode: 'cors',
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: DashboardResponse = await response.json()
       
       if (data.success && data.data) {
         console.log('✅ Dashboard data loaded successfully')

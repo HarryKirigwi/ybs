@@ -15,12 +15,7 @@ import AdminProtectedRoute from '../../components/admin/AdminProtectedRoute'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { useAdminAuth } from '../../components/admin/contexts/AdminAuthContext'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
-
-function apiUrl(path: string) {
-  if (path.startsWith('http')) return path
-  return `${BACKEND_URL}${path}`
-}
+import { apiGet } from '@/lib/api'
 
 // Types for dashboard data
 interface DashboardStats {
@@ -84,24 +79,20 @@ export default function AdminDashboardPage() {
 
     try {
       setError(null)
-      const response = await fetch(apiUrl('/admin/dashboard'), {
-        method: 'GET',
-        credentials: 'include',
-        mode: 'cors',
-      })
+      console.log('📊 Fetching dashboard data...')
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data: DashboardResponse = await response.json()
+      const data = await apiGet<DashboardData>('/admin/dashboard')
       
-      if (data.success) {
+      if (data.success && data.data) {
+        console.log('✅ Dashboard data loaded successfully')
         setDashboardData(data.data)
       } else {
-        throw new Error(data.message || 'Failed to fetch dashboard data')
+        const errorMessage = data.message || 'Failed to fetch dashboard data'
+        console.log('❌ Dashboard data fetch failed:', errorMessage)
+        throw new Error(errorMessage)
       }
     } catch (err: any) {
+      console.error('❌ Dashboard data fetch error:', err)
       setError(err.message || 'Failed to load dashboard data')
     } finally {
       setLoading(false)

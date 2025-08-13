@@ -33,16 +33,19 @@ const getStoredToken = (): string | null => {
 interface Withdrawal {
   id: string
   userId: string
-  userPhoneNumber: string
-  userFirstName: string
-  userLastName: string
-  userEmail?: string
   amount: number
+  mpesaNumber: string
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
-  reason?: string
-  createdAt: string
+  mpesaTransactionCode?: string
+  rejectionReason?: string
+  requestedAt: string
   processedAt?: string
-  processedBy?: string
+  resolvedAt?: string
+  user: {
+    phoneNumber: string
+    firstName: string
+    lastName: string
+  }
 }
 
 interface Pagination {
@@ -72,6 +75,14 @@ export default function AdminWithdrawalsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [showApprovalModal, setShowApprovalModal] = useState(false)
+  const [showRejectionModal, setShowRejectionModal] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null)
+  const [mpesaTransactionCode, setMpesaTransactionCode] = useState('')
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [approvalLoading, setApprovalLoading] = useState(false)
+  const [rejectionLoading, setRejectionLoading] = useState(false)
   const { isAuthenticated } = useAdminAuth()
 
   const fetchWithdrawals = async (page = 1) => {
@@ -183,6 +194,121 @@ export default function AdminWithdrawalsPage() {
     } finally {
       setProcessingId(null)
     }
+  }
+
+  const handleApproveWithdrawal = (withdrawal: Withdrawal) => {
+    setSelectedWithdrawal(withdrawal)
+    setMpesaTransactionCode('')
+    setShowApprovalModal(true)
+  }
+
+  const handleApprovalSubmit = async () => {
+    if (!selectedWithdrawal || !mpesaTransactionCode.trim()) {
+      alert('Please enter the M-Pesa transaction code')
+      return
+    }
+
+    setApprovalLoading(true)
+
+    try {
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(apiUrl(`/admin/withdrawals/${selectedWithdrawal.id}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        body: JSON.stringify({ 
+          status: 'COMPLETED', 
+          mpesaTransactionCode: mpesaTransactionCode.trim() 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setShowApprovalModal(false)
+        setSelectedWithdrawal(null)
+        setMpesaTransactionCode('')
+        fetchWithdrawals() // Refresh the list
+        alert('Withdrawal approved successfully!')
+      } else {
+        throw new Error(data.message || 'Failed to approve withdrawal')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve withdrawal')
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  const handleRejectWithdrawal = (withdrawal: Withdrawal) => {
+    setSelectedWithdrawal(withdrawal)
+    setRejectionReason('')
+    setShowRejectionModal(true)
+  }
+
+  const handleRejectionSubmit = async () => {
+    if (!selectedWithdrawal || !rejectionReason.trim()) {
+      alert('Please enter a rejection reason')
+      return
+    }
+
+    setRejectionLoading(true)
+
+    try {
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(apiUrl(`/admin/withdrawals/${selectedWithdrawal.id}`), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        body: JSON.stringify({ 
+          status: 'REJECTED', 
+          rejectionReason: rejectionReason.trim() 
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setShowRejectionModal(false)
+        setSelectedWithdrawal(null)
+        setRejectionReason('')
+        fetchWithdrawals() // Refresh the list
+        alert('Withdrawal rejected successfully!')
+      } else {
+        throw new Error(data.message || 'Failed to reject withdrawal')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to reject withdrawal')
+    } finally {
+      setRejectionLoading(false)
+    }
+  }
+
+  const handlePreviewWithdrawal = (withdrawal: Withdrawal) => {
+    setSelectedWithdrawal(withdrawal)
+    setShowPreviewModal(true)
   }
 
   const formatCurrency = (amount: number) => {
@@ -349,19 +475,16 @@ export default function AdminWithdrawalsPage() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
                             <h4 className="font-medium text-slate-800">
-                              {withdrawal.userFirstName} {withdrawal.userLastName}
+                              {withdrawal.user.firstName} {withdrawal.user.lastName}
                             </h4>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(withdrawal.status)}`}>
                               {getStatusIcon(withdrawal.status)}
                               <span>{withdrawal.status}</span>
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500">{withdrawal.userPhoneNumber}</p>
-                          {withdrawal.userEmail && (
-                            <p className="text-xs text-slate-400">{withdrawal.userEmail}</p>
-                          )}
+                          <p className="text-sm text-slate-500">{withdrawal.user.phoneNumber}</p>
                           <p className="text-xs text-slate-500">
-                            Requested {formatDate(withdrawal.createdAt)}
+                            Requested {formatDate(withdrawal.requestedAt)}
                           </p>
                         </div>
                       </div>
@@ -371,28 +494,32 @@ export default function AdminWithdrawalsPage() {
                           <p className="text-lg font-bold text-slate-800">
                             {formatCurrency(withdrawal.amount)}
                           </p>
-                          {withdrawal.reason && (
-                            <p className="text-xs text-red-600">{withdrawal.reason}</p>
+                          {withdrawal.rejectionReason && (
+                            <p className="text-xs text-red-600">{withdrawal.rejectionReason}</p>
                           )}
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                        <button 
+                          onClick={() => handlePreviewWithdrawal(withdrawal)}
+                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                          title="View Details"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
                         
                         {withdrawal.status === 'PENDING' && (
                           <>
                             <button
-                              onClick={() => handleStatusUpdate(withdrawal.id, 'COMPLETED')}
+                              onClick={() => handleApproveWithdrawal(withdrawal)}
                               disabled={processingId === withdrawal.id}
                               className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                             >
                               {processingId === withdrawal.id ? 'Processing...' : 'Approve'}
                             </button>
                             <button
-                              onClick={() => handleStatusUpdate(withdrawal.id, 'REJECTED', 'Rejected by admin')}
+                              onClick={() => handleRejectWithdrawal(withdrawal)}
                               disabled={processingId === withdrawal.id}
                               className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                             >
@@ -440,6 +567,293 @@ export default function AdminWithdrawalsPage() {
             )}
           </div>
         </div>
+
+        {/* Approval Modal */}
+        {showApprovalModal && selectedWithdrawal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-800">Approve Withdrawal</h3>
+                <button
+                  onClick={() => {
+                    setShowApprovalModal(false)
+                    setSelectedWithdrawal(null)
+                    setMpesaTransactionCode('')
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">User:</span>
+                    <span className="font-medium text-slate-800">
+                      {selectedWithdrawal.user.firstName} {selectedWithdrawal.user.lastName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Phone:</span>
+                    <span className="font-medium text-slate-800">{selectedWithdrawal.user.phoneNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Amount:</span>
+                    <span className="font-bold text-slate-800">{formatCurrency(selectedWithdrawal.amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">M-Pesa Number:</span>
+                    <span className="font-medium text-slate-800">{selectedWithdrawal.mpesaNumber}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    M-Pesa Transaction Code *
+                  </label>
+                  <input
+                    type="text"
+                    value={mpesaTransactionCode}
+                    onChange={(e) => setMpesaTransactionCode(e.target.value)}
+                    placeholder="e.g., QK123456789"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Enter the M-Pesa transaction code from the payment confirmation
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowApprovalModal(false)
+                      setSelectedWithdrawal(null)
+                      setMpesaTransactionCode('')
+                    }}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApprovalSubmit}
+                    disabled={approvalLoading || !mpesaTransactionCode.trim()}
+                    className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{approvalLoading ? 'Approving...' : 'Approve Withdrawal'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rejection Modal */}
+        {showRejectionModal && selectedWithdrawal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-800">Reject Withdrawal</h3>
+                <button
+                  onClick={() => {
+                    setShowRejectionModal(false)
+                    setSelectedWithdrawal(null)
+                    setRejectionReason('')
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">User:</span>
+                    <span className="font-medium text-slate-800">
+                      {selectedWithdrawal.user.firstName} {selectedWithdrawal.user.lastName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Phone:</span>
+                    <span className="font-medium text-slate-800">{selectedWithdrawal.user.phoneNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Amount:</span>
+                    <span className="font-bold text-slate-800">{formatCurrency(selectedWithdrawal.amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">M-Pesa Number:</span>
+                    <span className="font-medium text-slate-800">{selectedWithdrawal.mpesaNumber}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Rejection Reason *
+                  </label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Enter the reason for rejecting this withdrawal request..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                    autoFocus
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    This reason will be shown to the user
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowRejectionModal(false)
+                      setSelectedWithdrawal(null)
+                      setRejectionReason('')
+                    }}
+                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRejectionSubmit}
+                    disabled={rejectionLoading || !rejectionReason.trim()}
+                    className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>{rejectionLoading ? 'Rejecting...' : 'Reject Withdrawal'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Preview Modal */}
+        {showPreviewModal && selectedWithdrawal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-slate-800">Withdrawal Details</h3>
+                <button
+                  onClick={() => {
+                    setShowPreviewModal(false)
+                    setSelectedWithdrawal(null)
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* User Information */}
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="font-semibold text-slate-800 mb-3">User Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-slate-600">Full Name</label>
+                      <p className="font-medium text-slate-800">
+                        {selectedWithdrawal.user.firstName} {selectedWithdrawal.user.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-slate-600">Phone Number</label>
+                      <p className="font-medium text-slate-800">{selectedWithdrawal.user.phoneNumber}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Withdrawal Information */}
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="font-semibold text-slate-800 mb-3">Withdrawal Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-slate-600">Amount</label>
+                      <p className="text-xl font-bold text-slate-800">{formatCurrency(selectedWithdrawal.amount)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-slate-600">Status</label>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedWithdrawal.status)}`}>
+                        {selectedWithdrawal.status}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="text-sm text-slate-600">M-Pesa Number</label>
+                      <p className="font-medium text-slate-800">{selectedWithdrawal.mpesaNumber}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-slate-600">Requested At</label>
+                      <p className="font-medium text-slate-800">{formatDate(selectedWithdrawal.requestedAt)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Processing Information */}
+                {(selectedWithdrawal.processedAt || selectedWithdrawal.resolvedAt || selectedWithdrawal.mpesaTransactionCode || selectedWithdrawal.rejectionReason) && (
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <h4 className="font-semibold text-slate-800 mb-3">Processing Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedWithdrawal.processedAt && (
+                        <div>
+                          <label className="text-sm text-slate-600">Processed At</label>
+                          <p className="font-medium text-slate-800">{formatDate(selectedWithdrawal.processedAt)}</p>
+                        </div>
+                      )}
+                      {selectedWithdrawal.resolvedAt && (
+                        <div>
+                          <label className="text-sm text-slate-600">Resolved At</label>
+                          <p className="font-medium text-slate-800">{formatDate(selectedWithdrawal.resolvedAt)}</p>
+                        </div>
+                      )}
+                      {selectedWithdrawal.mpesaTransactionCode && (
+                        <div>
+                          <label className="text-sm text-slate-600">M-Pesa Transaction Code</label>
+                          <p className="font-medium text-slate-800 font-mono">{selectedWithdrawal.mpesaTransactionCode}</p>
+                        </div>
+                      )}
+                      {selectedWithdrawal.rejectionReason && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm text-slate-600">Rejection Reason</label>
+                          <p className="font-medium text-red-600 bg-red-50 p-2 rounded mt-1">{selectedWithdrawal.rejectionReason}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons for Pending Withdrawals */}
+                {selectedWithdrawal.status === 'PENDING' && (
+                  <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
+                    <button
+                      onClick={() => {
+                        setShowPreviewModal(false)
+                        handleApproveWithdrawal(selectedWithdrawal)
+                      }}
+                      className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Approve</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPreviewModal(false)
+                        handleRejectWithdrawal(selectedWithdrawal)
+                      }}
+                      className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Reject</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </AdminLayout>
     </AdminProtectedRoute>
   )

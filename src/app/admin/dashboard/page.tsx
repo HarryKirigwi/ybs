@@ -62,8 +62,18 @@ interface RecentWithdrawal {
   id: string
   userId: string
   amount: number
+  mpesaNumber: string
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
-  createdAt: string
+  mpesaTransactionCode?: string
+  rejectionReason?: string
+  requestedAt: string
+  processedAt?: string
+  resolvedAt?: string
+  user: {
+    phoneNumber: string
+    firstName: string
+    lastName: string
+  }
 }
 
 interface DashboardData {
@@ -366,7 +376,9 @@ export default function AdminDashboardPage() {
                             <p className="font-medium text-slate-800">
                               {formatCurrency(withdrawal.amount)}
                             </p>
-                            <p className="text-sm text-slate-500">ID: {withdrawal.userId}</p>
+                            <p className="text-sm text-slate-500">
+                              {withdrawal.user.firstName} {withdrawal.user.lastName}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -378,7 +390,7 @@ export default function AdminDashboardPage() {
                             {withdrawal.status}
                           </span>
                           <p className="text-xs text-slate-500 mt-1">
-                            {formatDate(withdrawal.createdAt)}
+                            {formatDate(withdrawal.requestedAt)}
                           </p>
                         </div>
                       </div>

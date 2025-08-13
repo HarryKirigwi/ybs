@@ -77,7 +77,7 @@ export default function AdminSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
-  const { isAuthenticated, logout } = useAdminAuth()
+  const { isAuthenticated, logoutAdmin } = useAdminAuth()
 
   const fetchSettings = async () => {
     if (!isAuthenticated) return
@@ -129,7 +129,7 @@ export default function AdminSettingsPage() {
   }
 
   const handleLogout = () => {
-    logout()
+    logoutAdmin()
   }
 
   const handlePasswordChange = async () => {

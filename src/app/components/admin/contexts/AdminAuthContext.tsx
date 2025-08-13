@@ -14,7 +14,7 @@ interface AdminUser {
   email: string
   firstName: string
   lastName: string
-  role: 'ADMIN' | 'SUPER_ADMIN'
+  role: 'admin' | 'super_admin'
   permissions: string[]
   isActive: boolean
   createdAt: string
@@ -27,7 +27,8 @@ interface AdminLoginResponse {
   message: string
   data?: {
     admin: AdminUser
-    accessToken: string
+    token: string
+    refreshToken: string
   }
   error?: string
 }
@@ -59,21 +60,46 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Helper function to get stored token
+  const getStoredToken = (): string | null => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('adminToken')
+  }
+
+  // Helper function to store token
+  const storeToken = (token: string) => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('adminToken', token)
+  }
+
+  // Helper function to remove token
+  const removeToken = () => {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem('adminToken')
+  }
+
   const checkAdminAuthStatus = async (): Promise<boolean> => {
     try {
       console.log('🔍 Checking admin authentication status...')
-      console.log('Current domain:', typeof window !== 'undefined' ? window.location.origin : 'server')
-      console.log('Current protocol:', typeof window !== 'undefined' ? window.location.protocol : 'server')
-      console.log('Available cookies:', typeof window !== 'undefined' ? document.cookie : 'server')
       
-      const response = await fetch(apiUrl('/admin/auth/verify'), {
+      const token = getStoredToken()
+      if (!token) {
+        console.log('❌ No admin token found')
+        setAdmin(null)
+        setIsAuthenticated(false)
+        return false
+      }
+
+      const response = await fetch(apiUrl('/auth/admin/auth/verify'), {
         method: 'GET',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         mode: 'cors',
       })
 
       console.log('Auth check response status:', response.status)
-      console.log('Auth check response headers:', Object.fromEntries(response.headers.entries()))
 
       if (response.ok) {
         const data = await response.json()
@@ -94,11 +120,14 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         statusText: response.statusText
       })
       
+      // Token is invalid, remove it
+      removeToken()
       setAdmin(null)
       setIsAuthenticated(false)
       return false
     } catch (err) {
       console.error('❌ Error checking admin auth status:', err)
+      removeToken()
       setAdmin(null)
       setIsAuthenticated(false)
       return false
@@ -117,12 +146,11 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         mode: 'cors',
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
+      const data: AdminLoginResponse = await response.json()
 
       if (response.ok && data.success && data.data) {
         console.log('✅ Admin login successful:', {
@@ -130,6 +158,10 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
           email: data.data.admin.email,
           role: data.data.admin.role
         })
+        
+        // Store the token
+        storeToken(data.data.token)
+        
         setAdmin(data.data.admin)
         setIsAuthenticated(true)
         return { success: true }
@@ -153,27 +185,37 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
     try {
       console.log('🚪 Attempting admin logout...')
 
-      const response = await fetch(apiUrl('/auth/admin/logout'), {
-        method: 'POST',
-        credentials: 'include',
-        mode: 'cors',
-      })
+      const token = getStoredToken()
+      if (token) {
+        const response = await fetch(apiUrl('/auth/admin/logout'), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          mode: 'cors',
+        })
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          console.log('✅ Admin logout successful')
-          setAdmin(null)
-          setIsAuthenticated(false)
-          return { success: true }
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            console.log('✅ Admin logout successful')
+          }
         }
       }
       
-      console.log('❌ Admin logout failed')
-      return { success: false, error: 'Logout failed' }
+      // Always clear local state and token regardless of server response
+      removeToken()
+      setAdmin(null)
+      setIsAuthenticated(false)
+      return { success: true }
     } catch (err: any) {
       console.error('❌ Admin logout error:', err)
-      return { success: false, error: err.message || 'Network error' }
+      // Still clear local state even if server call fails
+      removeToken()
+      setAdmin(null)
+      setIsAuthenticated(false)
+      return { success: true }
     }
   }
 

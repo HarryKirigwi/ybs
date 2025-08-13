@@ -14,12 +14,19 @@ import {
 import AdminProtectedRoute from '../../components/admin/AdminProtectedRoute'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { useAdminAuth } from '../../components/admin/contexts/AdminAuthContext'
+import { DashboardSkeleton } from '../../components/admin/SkeletonLoader'
 
 // API utility function - same pattern as other components
 const apiUrl = (path: string) => {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   if (path.startsWith('http')) return path
   return `${BACKEND_URL}${path}`
+}
+
+// Helper function to get stored token
+const getStoredToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('adminToken')
 }
 
 // Types for dashboard data
@@ -46,6 +53,7 @@ interface RecentUser {
   phoneNumber: string
   firstName: string
   lastName: string
+  email?: string
   accountStatus: 'ACTIVE' | 'UNVERIFIED' | 'SUSPENDED'
   createdAt: string
 }
@@ -86,9 +94,17 @@ export default function AdminDashboardPage() {
       setError(null)
       console.log('📊 Fetching dashboard data...')
 
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(apiUrl('/admin/dashboard'), {
         method: 'GET',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         mode: 'cors',
       })
 
@@ -155,12 +171,7 @@ export default function AdminDashboardPage() {
     return (
       <AdminProtectedRoute>
         <AdminLayout activePage="dashboard">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading dashboard...</p>
-            </div>
-          </div>
+          <DashboardSkeleton />
         </AdminLayout>
       </AdminProtectedRoute>
     )
@@ -309,6 +320,9 @@ export default function AdminDashboardPage() {
                               {user.firstName} {user.lastName}
                             </p>
                             <p className="text-sm text-slate-500">{user.phoneNumber}</p>
+                            {user.email && (
+                              <p className="text-xs text-slate-400">{user.email}</p>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">

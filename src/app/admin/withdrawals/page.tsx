@@ -14,12 +14,19 @@ import {
 import AdminProtectedRoute from '../../components/admin/AdminProtectedRoute'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { useAdminAuth } from '../../components/admin/contexts/AdminAuthContext'
+import { WithdrawalsSkeleton } from '../../components/admin/SkeletonLoader'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
-
-function apiUrl(path: string) {
+// API utility function - same pattern as other components
+const apiUrl = (path: string) => {
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   if (path.startsWith('http')) return path
   return `${BACKEND_URL}${path}`
+}
+
+// Helper function to get stored token
+const getStoredToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('adminToken')
 }
 
 // Types for withdrawals data
@@ -29,6 +36,7 @@ interface Withdrawal {
   userPhoneNumber: string
   userFirstName: string
   userLastName: string
+  userEmail?: string
   amount: number
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
   reason?: string
@@ -71,6 +79,13 @@ export default function AdminWithdrawalsPage() {
 
     try {
       setError(null)
+      console.log('💰 Fetching withdrawals data...')
+
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20'
@@ -86,7 +101,10 @@ export default function AdminWithdrawalsPage() {
 
       const response = await fetch(apiUrl(`/admin/withdrawals?${params}`), {
         method: 'GET',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         mode: 'cors',
       })
 
@@ -133,12 +151,17 @@ export default function AdminWithdrawalsPage() {
     setProcessingId(withdrawalId)
 
     try {
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(apiUrl(`/admin/withdrawals/${withdrawalId}`), {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         mode: 'cors',
         body: JSON.stringify({ status, reason }),
       })
@@ -210,12 +233,7 @@ export default function AdminWithdrawalsPage() {
     return (
       <AdminProtectedRoute>
         <AdminLayout activePage="withdrawals">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading withdrawals...</p>
-            </div>
-          </div>
+          <WithdrawalsSkeleton />
         </AdminLayout>
       </AdminProtectedRoute>
     )
@@ -339,6 +357,9 @@ export default function AdminWithdrawalsPage() {
                             </span>
                           </div>
                           <p className="text-sm text-slate-500">{withdrawal.userPhoneNumber}</p>
+                          {withdrawal.userEmail && (
+                            <p className="text-xs text-slate-400">{withdrawal.userEmail}</p>
+                          )}
                           <p className="text-xs text-slate-500">
                             Requested {formatDate(withdrawal.createdAt)}
                           </p>

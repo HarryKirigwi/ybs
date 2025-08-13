@@ -15,12 +15,19 @@ import {
 import AdminProtectedRoute from '../../components/admin/AdminProtectedRoute'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { useAdminAuth } from '../../components/admin/contexts/AdminAuthContext'
+import { SystemStatsSkeleton } from '../../components/admin/SkeletonLoader'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
-
-function apiUrl(path: string) {
+// API utility function - same pattern as other components
+const apiUrl = (path: string) => {
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   if (path.startsWith('http')) return path
   return `${BACKEND_URL}${path}`
+}
+
+// Helper function to get stored token
+const getStoredToken = (): string | null => {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('adminToken')
 }
 
 // Types for system stats data
@@ -79,9 +86,19 @@ export default function AdminSystemStatsPage() {
 
     try {
       setError(null)
+      console.log('📊 Fetching system stats...')
+
+      const token = getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
       const response = await fetch(apiUrl('/admin/system-stats'), {
         method: 'GET',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         mode: 'cors',
       })
 
@@ -125,12 +142,7 @@ export default function AdminSystemStatsPage() {
     return (
       <AdminProtectedRoute>
         <AdminLayout activePage="system-stats">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading system stats...</p>
-            </div>
-          </div>
+          <SystemStatsSkeleton />
         </AdminLayout>
       </AdminProtectedRoute>
     )

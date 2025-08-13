@@ -53,12 +53,6 @@ const navigationItems = [
     href: '/admin/system-stats'
   },
   {
-    id: 'test',
-    name: 'Test',
-    icon: Shield,
-    href: '/admin/test'
-  },
-  {
     id: 'settings',
     name: 'Settings',
     icon: Settings,
@@ -109,7 +103,7 @@ export default function AdminLayout({ children, activePage = 'dashboard' }: Admi
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 cursor-pointer"
             >
               <X className="w-5 h-5 text-slate-600" />
             </button>
@@ -125,7 +119,7 @@ export default function AdminLayout({ children, activePage = 'dashboard' }: Admi
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.href)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
@@ -151,7 +145,7 @@ export default function AdminLayout({ children, activePage = 'dashboard' }: Admi
             </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
               <LogOut className="w-5 h-5" />
               <span className="font-medium">Sign Out</span>
@@ -163,20 +157,58 @@ export default function AdminLayout({ children, activePage = 'dashboard' }: Admi
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="bg-white shadow-sm border-b border-slate-200">
+        <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-slate-200">
           <div className="flex items-center justify-between px-6 py-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
-            >
-              <Menu className="w-5 h-5 text-slate-600" />
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <Menu className="w-5 h-5 text-slate-600" />
+              </button>
+              
+              {/* Welcome Message */}
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-semibold text-slate-800">
+                  Welcome back, {admin?.firstName}!
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+            </div>
             
             <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-500">
-                <TrendingUp className="w-4 h-4" />
-                <span>Admin Panel</span>
+              {/* Admin Info */}
+              <div className="hidden md:flex items-center space-x-3 text-sm">
+                <div className="text-right">
+                  <p className="font-medium text-slate-800">
+                    {admin?.firstName} {admin?.lastName}
+                  </p>
+                  <p className="text-slate-500 capitalize">
+                    {admin?.role?.toLowerCase().replace('_', ' ')}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold text-sm">
+                    {admin?.firstName?.charAt(0)}{admin?.lastName?.charAt(0)}
+                  </span>
+                </div>
               </div>
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
+import { useOffline } from './OfflineContext';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
 
@@ -131,6 +132,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [rateLimited, setRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
 
+  // Offline functionality
+  const { 
+    getUserDataOffline, 
+    storeUserDataOffline, 
+    initializeOffline 
+  } = useOffline();
+
   // Rate limiter instance
   const rateLimiterRef = useRef(new RateLimiter(3, 60000)); // 3 requests per minute
   const lastRequestRef = useRef<number>(0);
@@ -212,6 +220,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         if (result.success && result.data) {
           const processedData = processUserData(result.data);
           setUserData(processedData);
+          
+          // Store data offline
+          try {
+            await storeUserDataOffline(processedData.id, processedData);
+          } catch (error) {
+            console.error('Failed to store user data offline:', error);
+          }
         } else {
           setError(result.error || 'Failed to fetch user data');
           setUserData(null);
@@ -291,12 +306,31 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   // Initial fetch with delay to prevent immediate rate limiting
   useEffect(() => {
-    const timer = setTimeout(() => {
-      debouncedFetchUserData();
-    }, 100); // Small delay to prevent immediate requests on mount
+    const initializeAndFetch = async () => {
+      // Try to get offline data first
+      if (userData?.id) {
+        try {
+          const offlineData = await getUserDataOffline(userData.id);
+          if (offlineData) {
+            console.log('📱 Loading user data from offline storage');
+            setUserData(offlineData.profile);
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Failed to load offline data:', error);
+        }
+      }
 
-    return () => clearTimeout(timer);
-  }, [debouncedFetchUserData]);
+      // Then fetch fresh data
+      const timer = setTimeout(() => {
+        debouncedFetchUserData();
+      }, 100);
+
+      return () => clearTimeout(timer);
+    };
+
+    initializeAndFetch();
+  }, [debouncedFetchUserData, getUserDataOffline, userData?.id]);
 
   // Reduced polling frequency and smarter polling
   useEffect(() => {

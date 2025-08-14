@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, Clock, Target, Users, TrendingUp, Calendar, Share2, Play, UserPlus, Award } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import TasksSkeleton from './TasksSkeleton'
 
 interface Task {
   id: string
@@ -279,14 +280,7 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
   }
 
   if (loading) {
-    return (
-      <div className="p-4 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading tasks...</p>
-        </div>
-      </div>
-    )
+    return <TasksSkeleton />
   }
 
   if (error) {

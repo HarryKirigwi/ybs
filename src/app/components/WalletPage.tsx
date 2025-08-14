@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react'
 import { useUserData } from '../hooks/useUserData'
 import { useActivation } from '../hooks/useActivation'
 import { useAuth } from '../contexts/AuthContext'
+import { TransactionListSkeleton } from './TransactionSkeleton'
 
 interface Transaction {
   id: string
@@ -681,10 +682,7 @@ export default function WalletPage() {
         </div>
         <div className="divide-y divide-slate-100">
           {transactionsLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-              <p className="text-slate-500">Loading transactions...</p>
-            </div>
+            <TransactionListSkeleton />
           ) : transactionsError ? (
             <div className="p-8 text-center">
               <TrendingUp className="w-12 h-12 text-red-300 mx-auto mb-3" />

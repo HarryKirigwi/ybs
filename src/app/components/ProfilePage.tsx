@@ -40,6 +40,7 @@ import { useUserData } from '../hooks/useUserData'
 import { useAuth } from '../contexts/AuthContext'
 import { useLogout } from '../hooks/useLogout'
 import { useActivation } from '../hooks/useActivation'
+import ProfileSkeleton from './ProfileSkeleton'
 
 export default function ProfilePage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
@@ -242,14 +243,7 @@ export default function ProfilePage() {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="p-4 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading profile...</p>
-        </div>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   // Error state

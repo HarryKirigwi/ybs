@@ -17,7 +17,7 @@ interface NetworkStatus {
 
 class OfflineApiManager {
   private networkStatus: NetworkStatus = {
-    isOnline: navigator.onLine,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     lastCheck: Date.now()
   };
 
@@ -25,12 +25,16 @@ class OfflineApiManager {
   private readonly BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   constructor() {
-    this.setupNetworkListeners();
-    this.initializeServiceWorker();
+    // Only attach browser listeners on the client
+    if (typeof window !== 'undefined') {
+      this.setupNetworkListeners();
+      this.initializeServiceWorker();
+    }
   }
 
   // Setup network status listeners
   private setupNetworkListeners(): void {
+    if (typeof window === 'undefined') return;
     window.addEventListener('online', () => {
       this.networkStatus.isOnline = true;
       this.networkStatus.lastCheck = Date.now();
@@ -47,7 +51,7 @@ class OfflineApiManager {
 
   // Initialize service worker
   private async initializeServiceWorker(): Promise<void> {
-    if ('serviceWorker' in navigator) {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         console.log('Service Worker registered:', registration);

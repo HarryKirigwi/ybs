@@ -43,7 +43,7 @@ interface OfflineProviderProps {
 
 export function OfflineProvider({ children }: OfflineProviderProps) {
   const [offlineState, setOfflineState] = useState<OfflineState>({
-    isOnline: navigator.onLine,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     isInitialized: false,
     hasOfflineData: false,
     pendingActions: 0,
@@ -68,7 +68,7 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
   // Monitor network status
   useEffect(() => {
     const updateNetworkStatus = () => {
-      const isOnline = navigator.onLine;
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
       setOfflineState(prev => ({ ...prev, isOnline }));
       
       if (isOnline) {
@@ -77,12 +77,16 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
       }
     };
 
-    window.addEventListener('online', updateNetworkStatus);
-    window.addEventListener('offline', updateNetworkStatus);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', updateNetworkStatus);
+      window.addEventListener('offline', updateNetworkStatus);
+    }
 
     return () => {
-      window.removeEventListener('online', updateNetworkStatus);
-      window.removeEventListener('offline', updateNetworkStatus);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', updateNetworkStatus);
+        window.removeEventListener('offline', updateNetworkStatus);
+      }
     };
   }, []);
 
@@ -239,7 +243,9 @@ export function useOffline(): OfflineContextType {
 // Hook to check if offline functionality is available
 export function useOfflineAvailable(): boolean {
   const { offlineState } = useOffline();
-  return offlineState.isInitialized && 'serviceWorker' in navigator && 'indexedDB' in window;
+  const hasSW = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+  const hasIDB = typeof window !== 'undefined' && 'indexedDB' in window;
+  return offlineState.isInitialized && hasSW && hasIDB;
 }
 
 // Hook to get network status

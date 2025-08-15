@@ -151,6 +151,7 @@ class OfflineApiManager {
       method: options.method || 'GET',
       headers: options.headers as Record<string, string>,
       body: options.body as string,
+      retryCount: 0,
     };
 
     return await offlineStorage.queueOfflineAction(action);

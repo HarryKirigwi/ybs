@@ -90,23 +90,25 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
     };
   }, []);
 
-  // Monitor pending actions
+  // Monitor pending actions (only after DB initialized)
   useEffect(() => {
+    if (!offlineState.isInitialized) return;
+
     const checkPendingActions = async () => {
       try {
         const actions = await offlineStorage.getOfflineActions();
         setOfflineState(prev => ({ ...prev, pendingActions: actions.length }));
       } catch (error) {
-        console.error('Failed to check pending actions:', error);
+        // Avoid noisy logs during race conditions
       }
     };
 
-    // Check every 30 seconds
+    // Check every 30 seconds after init
     const interval = setInterval(checkPendingActions, 30000);
     checkPendingActions(); // Initial check
 
     return () => clearInterval(interval);
-  }, []);
+  }, [offlineState.isInitialized]);
 
   // Initialize offline functionality for user
   const initializeOffline = async (userId: string, sessionToken: string): Promise<void> => {

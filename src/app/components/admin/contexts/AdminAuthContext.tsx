@@ -1,11 +1,11 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
-// API utility function - same pattern as other components
+// API utility function - use same-origin to enable SW and rewrites
 const apiUrl = (path: string) => {
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
   if (path.startsWith('http')) return path
-  return `${BACKEND_URL}${path}`
+  const clean = path.startsWith('/') ? path : `/${path}`
+  return `/api${clean}`
 }
 
 // Admin user interface
@@ -96,7 +96,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        mode: 'cors',
+        // same-origin
       })
 
       console.log('Auth check response status:', response.status)
@@ -146,7 +146,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'cors',
+        // same-origin
         body: JSON.stringify({ email, password }),
       })
 
@@ -193,7 +193,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          mode: 'cors',
+          // same-origin
         })
 
         if (response.ok) {

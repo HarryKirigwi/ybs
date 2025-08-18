@@ -1,0 +1,40 @@
+* [33m62e1eaf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Fixed a login issue
+* [33m8dbce63[m Fixed login issue
+* [33m343b824[m added Affiliate center
+* [33m9b737e1[m Fixed another type error
+* [33m0d87129[m Fixed a type error
+* [33m966daa7[m Added desktop version
+* [33mb7f5eea[m Fixed the withdrawal page
+* [33me07982f[m Fixing build error
+* [33me9e899f[m Completed admin dashboard
+* [33mf5ceb0e[m Shit
+* [33mbf8106d[m Small changes
+* [33m83f8cdf[m Modified admin implementation
+* [33md66467b[m Modified the admin dashboard
+* [33mfdf5256[m Added the admin dashboard
+* [33m24d9ba9[m Small changes
+* [33mcc09b6d[m Small changes
+* [33m54fe2f4[m Connected the wallet page to the backend
+* [33m91958ce[m Linked the tasks page to the backend
+* [33ma5681b7[m Fetched tasks
+* [33mb62f279[m Small changes
+* [33me8a085a[m Removed unnecessary feature pages in register and login pages
+* [33mff36ee7[m small changes
+* [33m30d8061[m Small changes
+* [33m8a11b91[m Small change
+* [33m1e4a901[m implemented autologout feature
+* [33m9c47018[m Integrated mpesa
+* [33mcbb6429[m Small changes
+* [33me228e63[m Small changes
+* [33m58b057c[m Small changes
+* [33md321df0[m Changed some stuff
+* [33m89afe0d[m Changed authentication flow
+* [33m3ac7dbb[m Small changes
+* [33m3266ff8[m small changes
+* [33m691b81f[m Small changes
+* [33m5a62ef3[m Shows activation reminder
+* [33m3fa8629[m Fixed build error
+* [33m826227a[m Fixed next build error due to not wrapping in AuthProvider
+* [33m7f16452[m Added an activate account page
+* [33me325f4c[m Fixed registration
+* [33m988b9dc[m Small changes

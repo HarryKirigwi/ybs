@@ -71,6 +71,47 @@ class SecureOfflineStorage {
     });
   }
 
+  // Cache helpers for arbitrary API responses
+  async setCache(key: string, value: any, ttlMs: number): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const record = {
+      key,
+      value,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + ttlMs,
+    } as any;
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(['cache'], 'readwrite');
+      const store = tx.objectStore('cache');
+      const req = store.put(record);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getCache<T = any>(key: string): Promise<T | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(['cache'], 'readonly');
+      const store = tx.objectStore('cache');
+      const req = store.get(key);
+      req.onsuccess = () => {
+        const rec = req.result as { value: T; expiresAt: number } | undefined;
+        if (!rec) return resolve(null);
+        if (typeof rec.expiresAt === 'number' && rec.expiresAt < Date.now()) {
+          // Expired
+          resolve(null);
+        } else {
+          resolve(rec.value as T);
+        }
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   // Generate encryption key from user session
   async generateEncryptionKey(userId: string, sessionToken: string): Promise<void> {
     try {

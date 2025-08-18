@@ -71,13 +71,16 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Ignore non-http(s) schemes and extension requests
+  if (!(url.protocol === 'http:' || url.protocol === 'https:')) return;
+
   // Handle API requests
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(handleApiRequest(request));
     return;
   }
 
-  // Handle static assets
+  // Handle static assets (GET only)
   if (request.method === 'GET') {
     event.respondWith(handleStaticRequest(request));
     return;
@@ -87,16 +90,15 @@ self.addEventListener('fetch', (event) => {
 // Handle API requests with network-first strategy
 async function handleApiRequest(request) {
   try {
-    // Try network first
+    // Try network first; return server response even if 4xx/5xx
     const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Cache successful responses
+    if (networkResponse && networkResponse.ok) {
       const cache = await caches.open(API_CACHE_NAME);
       cache.put(request, networkResponse.clone());
-      return networkResponse;
     }
+    return networkResponse;
   } catch (error) {
+    // Network failure only: fall back to cache
     console.log('Network request failed, trying cache:', error);
   }
 

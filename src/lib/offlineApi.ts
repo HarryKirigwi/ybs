@@ -22,7 +22,7 @@ class OfflineApiManager {
   };
 
   private syncInProgress = false;
-  private readonly BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  private readonly BACKEND_URL = ''; // use same-origin and Next.js rewrites
 
   constructor() {
     // Only attach browser listeners on the client
@@ -84,7 +84,7 @@ class OfflineApiManager {
     const requestOptions: RequestInit = {
       ...options,
       credentials: 'include',
-      mode: 'cors',
+      // same-origin proxy, CORS mode not needed
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -95,15 +95,16 @@ class OfflineApiManager {
     if (this.networkStatus.isOnline) {
       try {
         const response = await fetch(url, requestOptions);
-        const data: ApiResponse<T> = await response.json();
+        // Always try to parse JSON; allow non-2xx to propagate
+        const data: ApiResponse<T> = await response
+          .clone()
+          .json()
+          .catch(() => ({ success: response.ok } as ApiResponse<T>));
 
-        if (response.ok && data.success) {
-          // Cache successful responses
+        if (response.ok && data && data.success) {
           await this.cacheResponse(endpoint, data);
-          return data;
-        } else {
-          throw new Error(data.error || 'Request failed');
         }
+        return data;
       } catch (error) {
         console.log('Network request failed, trying offline fallback:', error);
       }
@@ -139,7 +140,8 @@ class OfflineApiManager {
     if (endpoint.startsWith('http')) {
       return endpoint;
     }
-    return `${this.BACKEND_URL}${endpoint}`;
+    if (endpoint.startsWith('/')) return `/api${endpoint}`; // ensure SW interception
+    return `/api/${endpoint}`;
   }
 
   // Check if request should be queued for offline sync
@@ -164,16 +166,8 @@ class OfflineApiManager {
   // Cache API response
   private async cacheResponse(endpoint: string, data: ApiResponse): Promise<void> {
     try {
-      // Store in IndexedDB cache
       const cacheKey = `api_${endpoint}`;
-      const cacheData = {
-        data,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      };
-
-      // This would be implemented in the offlineStorage
-      // await offlineStorage.setCache(cacheKey, cacheData);
+      await offlineStorage.setCache(cacheKey, data, 24 * 60 * 60 * 1000);
     } catch (error) {
       console.error('Failed to cache response:', error);
     }
@@ -183,11 +177,8 @@ class OfflineApiManager {
   private async getCachedResponse<T>(endpoint: string): Promise<ApiResponse<T> | null> {
     try {
       const cacheKey = `api_${endpoint}`;
-      // This would be implemented in the offlineStorage
-      // const cached = await offlineStorage.getCache(cacheKey);
-      
-      // For now, return null
-      return null;
+      const cached = await offlineStorage.getCache<ApiResponse<T>>(cacheKey);
+      return cached || null;
     } catch (error) {
       console.error('Failed to get cached response:', error);
       return null;
@@ -213,7 +204,6 @@ class OfflineApiManager {
             headers: action.headers,
             body: action.body,
             credentials: 'include',
-            mode: 'cors',
           });
 
           if (response.ok) {

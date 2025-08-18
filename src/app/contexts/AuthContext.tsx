@@ -1,11 +1,13 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+const BACKEND_URL = ''
 
 function apiUrl(path: string) {
   if (path.startsWith('http')) return path
-  return `${BACKEND_URL}${path}`
+  // ensure SW and Next.js rewrites intercept
+  const clean = path.startsWith('/') ? path : `/${path}`
+  return `/api${clean}`
 }
 
 // Updated type definitions to match backend response structure
@@ -196,7 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await fetch(apiUrl('/user/profile'), {
         method: 'GET',
         credentials: 'include',
-        mode: 'cors',
+        // same-origin
       })
       
       if (response.ok) {
@@ -253,7 +255,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        mode: 'cors',
+        // same-origin
         body: JSON.stringify({
           fullName: userData.fullName,
           email: userData.email,
@@ -324,7 +326,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        mode: 'cors',
+        // same-origin
         body: JSON.stringify({
           phoneNumber: phoneNumber.trim(),
           password: password,
@@ -403,7 +405,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        mode: 'cors',
+        // same-origin
         body: JSON.stringify({
           action: 'send',
           phoneNumber: phoneNumber

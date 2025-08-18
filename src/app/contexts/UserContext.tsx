@@ -2,11 +2,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { useOffline } from './OfflineContext';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
+const BACKEND_URL = ''
 
 function apiUrl(path: string) {
   if (path.startsWith('http')) return path
-  return `${BACKEND_URL}${path}`
+  const clean = path.startsWith('/') ? path : `/${path}`
+  return `/api${clean}`
 }
 
 // Data processing utility to ensure data consistency
@@ -183,7 +184,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         const response = await fetch(apiUrl('/user/profile'), {
           method: 'GET',
-          mode: 'cors',
+          // same-origin
           credentials: 'include',
         });
 

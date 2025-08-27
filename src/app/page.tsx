@@ -108,14 +108,14 @@ function ProtectedContent() {
             return
           }
 
-          // Check if phone verification is required
-          if (!userData.phoneVerified) {
-            console.log('📱 Phone verification required, showing reminder...')
-            if (mounted) {
-              setAuthError('PHONE_VERIFICATION_REQUIRED')
-            }
-            return
-          }
+          // Check if phone verification is required (now optional)
+          // if (!userData.phoneVerified) {
+          //   console.log('📱 Phone verification required, showing reminder...')
+          //   if (mounted) {
+          //     setAuthError('PHONE_VERIFICATION_REQUIRED')
+          //   }
+          //   return
+          // }
 
           // Account activation check removed - allow all users regardless of status
 
@@ -217,11 +217,11 @@ function ProtectedContent() {
     return <LoadingSpinner />
   }
 
-  // Final safety check: ensure phone is verified
-  if (!userData.phoneVerified) {
-    console.log('📱 Phone verification check failed, showing reminder...')
-    return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
-  }
+  // Final safety check: ensure phone is verified (now optional)
+  // if (!userData.phoneVerified) {
+  //   console.log('📱 Phone verification check failed, showing reminder...')
+  //   return <PhoneVerificationReminder onRetry={handlePhoneVerification} />
+  // }
 
   // Only check for suspended accounts - allow all other statuses
   if (userData.accountStatus === 'SUSPENDED') {

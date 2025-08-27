@@ -170,10 +170,12 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
     })
     if (result.success) {
       setUserId(result.user_id || '')
-      // Send phone verification code
-      await handleSendVerificationCode(formData.phoneNumber)
-      setStep(2) // Move to phone verification
-      setSuccessMessage('Registration successful! Please verify your phone number.')
+      // Phone verification is now optional - show success message and redirect to login
+      setSuccessMessage('Registration successful! You can now sign in. Remember to activate your account with KSH 600 to start earning.')
+      // Auto-redirect to login after delay
+      setTimeout(() => {
+        onSwitchToLogin()
+      }, 3000)
     } else {
       if (result.error === 'Phone number already registered') {
         setErrors({ phoneNumber: 'This phone number is already registered' })
@@ -238,9 +240,9 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Smartphone className="w-8 h-8 text-blue-600" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">Verify Phone Number</h2>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Verify Phone Number (Optional)</h2>
               <p className="text-slate-600 mb-4">
-                We sent a 6-digit code to {formData.phoneNumber}
+                We sent a 6-digit code to {formData.phoneNumber}. You can skip this step and verify later.
               </p>
               {successMessage && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
@@ -299,6 +301,19 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
                 className="w-full text-blue-600 hover:text-blue-700 text-sm py-2"
               >
                 Resend Code
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessMessage('Registration successful! You can verify your phone number later. You can now sign in.')
+                  setTimeout(() => {
+                    onSwitchToLogin()
+                  }, 3000)
+                }}
+                className="w-full text-slate-500 hover:text-slate-700 text-sm py-2"
+              >
+                Skip for now
               </button>
             </form>
           </div>

@@ -1,30 +1,47 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
-import { useOffline } from './OfflineContext';
+// Offline functionality removed for regular users
 
-const BACKEND_URL = ''
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 function apiUrl(path: string) {
   if (path.startsWith('http')) return path
   const clean = path.startsWith('/') ? path : `/${path}`
+  // Use relative path for API routes in Next.js
   return `/api${clean}`
 }
 
-// Data processing utility to ensure data consistency
-const processUserData = (rawData: UserData): UserData => {
+// Data processing utility to ensure data consistency and field mapping
+const processUserData = (rawData: any): UserData => {
   return {
     ...rawData,
+    // Map backend field names to frontend field names
+    phone_verified: rawData.phoneVerified || rawData.phone_verified || false,
+    last_login: rawData.lastLogin || rawData.last_login,
+    active_direct_referrals: rawData.active_direct_referrals || 0,
+    
     // Ensure is_active is true when accountStatus is ACTIVE
-    is_active: rawData.accountStatus === 'ACTIVE' || rawData.is_active,
-    // Ensure phone_verified is consistent with account status
-    phone_verified: (rawData.accountStatus === 'ACTIVE' && rawData.phone_verified) || rawData.phone_verified,
-    // Ensure other computed fields are consistent
+    is_active: rawData.accountStatus === 'ACTIVE' || rawData.is_active || false,
+    
+    // Ensure other computed fields are consistent with defaults
     availableBalance: rawData.availableBalance || 0,
     totalEarned: rawData.totalEarned || 0,
     totalWithdrawn: rawData.totalWithdrawn || 0,
     pendingEarnings: rawData.pendingEarnings || 0,
-    active_direct_referrals: rawData.active_direct_referrals || 0,
     totalReferrals: rawData.totalReferrals || 0,
+    
+    // Ensure required fields have defaults
+    id: rawData.id || '',
+    email: rawData.email || '',
+    fullName: rawData.fullName || '',
+    firstName: rawData.firstName || '',
+    lastName: rawData.lastName || '',
+    userLevel: rawData.userLevel || 'BASIC',
+    phoneNumber: rawData.phoneNumber || '',
+    referralCode: rawData.referralCode || '',
+    username: rawData.username || '',
+    accountStatus: rawData.accountStatus || 'PENDING',
+    createdAt: rawData.createdAt || new Date().toISOString(),
   };
 };
 
@@ -133,12 +150,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [rateLimited, setRateLimited] = useState(false);
   const [retryAfter, setRetryAfter] = useState(0);
 
-  // Offline functionality
-  const { 
-    getUserDataOffline, 
-    storeUserDataOffline, 
-    initializeOffline 
-  } = useOffline();
+  // Offline functionality removed for regular users
 
   // Rate limiter instance
   const rateLimiterRef = useRef(new RateLimiter(3, 60000)); // 3 requests per minute
@@ -217,25 +229,24 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
 
         const result: ApiResponse<UserData> = await response.json();
+        console.log('📡 API Response:', result);
 
         if (result.success && result.data) {
+          console.log('✅ Raw user data received:', result.data);
           const processedData = processUserData(result.data);
+          console.log('✅ Processed user data:', processedData);
           setUserData(processedData);
           
-          // Store data offline
-          try {
-            await storeUserDataOffline(processedData.id, processedData);
-          } catch (error) {
-            console.error('Failed to store user data offline:', error);
-          }
+          // Offline storage removed for regular users
         } else {
+          console.error('❌ API returned error:', result.error || 'Unknown error');
           setError(result.error || 'Failed to fetch user data');
           setUserData(null);
         }
       } catch (err: any) {
+        console.error('❌ Network error fetching user data:', err);
         setError(err.message || 'Network error occurred');
         setUserData(null);
-        console.error('Error fetching user data:', err);
       } finally {
         setLoading(false);
         pendingRequestRef.current = null;
@@ -308,22 +319,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Initial fetch with delay to prevent immediate rate limiting
   useEffect(() => {
     const initializeAndFetch = async () => {
-      // Try to get offline data first
-      if (userData?.id) {
-        try {
-          const offlineData = await getUserDataOffline(userData.id);
-          if (offlineData) {
-            console.log('📱 Loading user data from offline storage');
-            setUserData(offlineData.profile);
-            setLoading(false);
-          }
-        } catch (error) {
-          console.error('Failed to load offline data:', error);
-        }
-      }
+      console.log('🚀 Initializing user data fetch...');
+      
+      // Offline functionality removed for regular users
 
       // Then fetch fresh data
       const timer = setTimeout(() => {
+        console.log('🔄 Fetching fresh user data...');
         debouncedFetchUserData();
       }, 100);
 
@@ -331,7 +333,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
 
     initializeAndFetch();
-  }, [debouncedFetchUserData, getUserDataOffline, userData?.id]);
+  }, [debouncedFetchUserData]);
 
   // Reduced polling frequency and smarter polling
   useEffect(() => {

@@ -66,11 +66,11 @@ export default function TasksPage({ setActiveTab }: TasksPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // API utility function
+  // API utility function - use Next.js API proxy
   const apiUrl = (path: string) => {
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
     if (path.startsWith('http')) return path
-    return `${BACKEND_URL}${path}`
+    // Use Next.js API proxy which forwards to backend
+    return `/api${path}`
   }
 
   // Fetch daily tasks

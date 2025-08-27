@@ -45,7 +45,7 @@ import ProfileSkeleton from './ProfileSkeleton'
 export default function ProfilePage() {
   const { userData, computedData, loading, error, refreshUserData } = useUserData()
   const { refreshUserData: authRefreshUserData } = useAuth()
-  const { logout } = useLogout()
+  const { logout, isLoggingOut } = useLogout()
   const { handleActivateNow } = useActivation()
 
   
@@ -233,8 +233,14 @@ export default function ProfilePage() {
 
 
 
- const handleLogout = () => {
-    logout('/auth/login') // Custom redirect path
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      try {
+        await logout('/auth/login')
+      } catch (error: any) {
+        console.error('Error during logout:', error)
+      }
+    }
   }
 
   const toggleSection = (section: string) => {
@@ -885,10 +891,20 @@ export default function ProfilePage() {
       {/* Logout Button */}
       <button 
         onClick={handleLogout}
-        className="w-full bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl flex items-center justify-center space-x-2 hover:bg-red-100 transition-colors"
+        disabled={isLoggingOut}
+        className="w-full bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl flex items-center justify-center space-x-2 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <LogOut className="w-5 h-5" />
-        <span className="font-medium">Logout</span>
+        {isLoggingOut ? (
+          <>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+            <span className="font-medium">Logging out...</span>
+          </>
+        ) : (
+          <>
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </>
+        )}
       </button>
     </div>
   )

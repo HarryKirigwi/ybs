@@ -3,6 +3,7 @@
 import { Bell, Menu, X, Home, CheckSquare, Wallet, User, Settings, LogOut, Award, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useUserData } from '../hooks/useUserData'
+import { useLogout } from '../hooks/useLogout'
 
 interface TopNavigationProps {
   activeTab?: string
@@ -12,6 +13,7 @@ interface TopNavigationProps {
 export default function TopNavigation({ activeTab, setActiveTab }: TopNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { userData, computedData, loading, error } = useUserData()
+  const { logout, isLoggingOut } = useLogout()
 
   const getMembershipLevelDisplay = (level: string) => {
     switch (level.toLowerCase()) {
@@ -68,13 +70,10 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
     setIsMenuOpen(false)
   }
 
-  const handleLogout = () => {
-    // Clear localStorage and redirect to login
+  const handleLogout = async () => {
     try {
-      localStorage.removeItem('user_data')
-      localStorage.removeItem('authToken') // Adjust based on your auth implementation
-      // You might want to call your auth context logout function here
-      window.location.href = '/login' // Adjust based on your routing
+      await logout('/auth/login')
+      setIsMenuOpen(false)
     } catch (error) {
       console.error('Error during logout:', error)
     }
@@ -322,10 +321,20 @@ export default function TopNavigation({ activeTab, setActiveTab }: TopNavigation
               </button>
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                disabled={isLoggingOut}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Logout</span>
+                {isLoggingOut ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+                    <span className="font-medium">Logging out...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Logout</span>
+                  </>
+                )}
               </button>
             </div>
             

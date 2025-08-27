@@ -205,7 +205,7 @@ export default function AdminSystemStatsPage() {
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.users.total.toLocaleString()}
+                    {(systemStats?.users?.total || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Total Users</p>
                 </div>
@@ -215,7 +215,7 @@ export default function AdminSystemStatsPage() {
                     <Activity className="w-6 h-6 text-green-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.users.active.toLocaleString()}
+                    {(systemStats?.users?.active || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Active Users</p>
                 </div>
@@ -225,7 +225,7 @@ export default function AdminSystemStatsPage() {
                     <Target className="w-6 h-6 text-yellow-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.users.activeLast30Days.toLocaleString()}
+                    {(systemStats?.users?.activeLast30Days || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Active (30 days)</p>
                 </div>
@@ -247,7 +247,7 @@ export default function AdminSystemStatsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Suspended Users</span>
                     <span className="text-lg font-semibold text-red-600">
-                      {systemStats?.users.suspended.toLocaleString()}
+                      {(systemStats?.users?.suspended || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -309,7 +309,7 @@ export default function AdminSystemStatsPage() {
                     <DollarSign className="w-6 h-6 text-red-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {formatCurrency(systemStats?.financials.totalWithdrawals.amount || 0)}
+                    {formatCurrency(systemStats?.financials?.totalWithdrawals?.amount || 0)}
                   </p>
                   <p className="text-sm text-slate-600">Pending Withdrawals</p>
                 </div>
@@ -321,7 +321,7 @@ export default function AdminSystemStatsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Pending Withdrawal Count</span>
                     <span className="text-lg font-semibold text-orange-600">
-                      {systemStats?.financials.totalWithdrawals.count.toLocaleString()}
+                      {(systemStats?.financials?.totalWithdrawals?.count || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ export default function AdminSystemStatsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-600">Average Revenue per User</span>
                     <span className="text-lg font-semibold text-slate-600">
-                      {systemStats?.users.total ? formatCurrency((systemStats?.financials.totalRevenue || 0) / systemStats.users.total) : 'KSH 0'}
+                      {systemStats?.users?.total ? formatCurrency((systemStats?.financials?.totalRevenue || 0) / systemStats.users.total) : 'KSH 0'}
                     </span>
                   </div>
                 </div>
@@ -353,7 +353,7 @@ export default function AdminSystemStatsPage() {
                     <BarChart3 className="w-6 h-6 text-purple-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.referrals.total.toLocaleString()}
+                    {(systemStats?.referrals?.total || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Total Referrals</p>
                 </div>
@@ -363,7 +363,7 @@ export default function AdminSystemStatsPage() {
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.referrals.activated.toLocaleString()}
+                    {(systemStats?.referrals?.activated || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Activated Referrals</p>
                 </div>
@@ -396,7 +396,7 @@ export default function AdminSystemStatsPage() {
                     <span className="text-gray-600 font-semibold">S</span>
                   </div>
                   <p className="text-2xl font-bold text-slate-800">
-                    {systemStats?.userLevels.silver.toLocaleString()}
+                    {(systemStats?.userLevels?.silver || 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-600">Silver Users</p>
                 </div>
@@ -407,7 +407,7 @@ export default function AdminSystemStatsPage() {
                       <span className="text-yellow-600 font-semibold">G</span>
                     </div>
                     <p className="text-2xl font-bold text-slate-800">
-                      {systemStats.userLevels.gold.toLocaleString()}
+                      {(systemStats?.userLevels?.gold || 0).toLocaleString()}
                     </p>
                     <p className="text-sm text-slate-600">Gold Users</p>
                   </div>
@@ -419,7 +419,7 @@ export default function AdminSystemStatsPage() {
                       <span className="text-purple-600 font-semibold">P</span>
                     </div>
                     <p className="text-2xl font-bold text-slate-800">
-                      {systemStats.userLevels.platinum.toLocaleString()}
+                      {(systemStats?.userLevels?.platinum || 0).toLocaleString()}
                     </p>
                     <p className="text-sm text-slate-600">Platinum Users</p>
                   </div>

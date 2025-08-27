@@ -281,7 +281,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return {
           success: true,
           user_id: data.data.user.id,
-          requiresPhoneVerification: !data.data.user.phoneVerified
+          // requiresPhoneVerification: !data.data.user.phoneVerified // Phone verification is now optional
         }
       } else {
         // Handle specific error cases

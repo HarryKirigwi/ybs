@@ -1,8 +1,7 @@
 // app/layout.tsx
 import './globals.css' // Make sure you have Tailwind CSS configured
 import { AdminAuthProvider } from './components/admin/contexts/AdminAuthContext'
-import { OfflineProvider } from './contexts/OfflineContext'
-import { OfflineBanner } from './components/NetworkStatusIndicator'
+// Offline functionality removed for regular users
 
 export const metadata = {
   title: 'YBS - Your Business Success',
@@ -28,12 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <OfflineProvider>
-          <AdminAuthProvider>
-            <OfflineBanner />
-            {children}
-          </AdminAuthProvider>
-        </OfflineProvider>
+        <AdminAuthProvider>
+          {children}
+        </AdminAuthProvider>
       </body>
     </html>
   )

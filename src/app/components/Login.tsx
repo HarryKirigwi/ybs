@@ -95,8 +95,8 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
       // Handle different types of errors
       if (result.error?.includes('No account found')) {
         setErrors({ phoneNumber: 'No account found with this phone number' })
-      } else if (result.error?.includes('verify your phone number')) {
-        setErrors({ submit: 'Please verify your phone number before signing in' })
+      // } else if (result.error?.includes('verify your phone number')) {
+      //   setErrors({ submit: 'Please verify your phone number before signing in' })
       } else if (result.error?.includes('Invalid phone number or password')) {
         setErrors({ submit: 'Invalid phone number or password' })
       } else {
